@@ -1,0 +1,10 @@
+{
+  "name": "LightJudger",
+  "version": "1.0.0",
+  "description": "Judger for LightOnlineJudge",
+  "main": "dist/index.js",
+  "repository": "https://github.com/ZhangZisu/LightJudger",
+  "author": "ZhangZisu",
+  "license": "Apache-2.0",
+  "private": false
+}
