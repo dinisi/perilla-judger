@@ -1,19 +1,21 @@
 {
-  "name": "LightJudger",
-  "version": "1.0.0",
-  "description": "Judger for LightOnlineJudge",
-  "main": "dist/index.js",
-  "repository": "https://github.com/ZhangZisu/LightJudger",
-  "author": "ZhangZisu",
-  "license": "Apache-2.0",
-  "private": false,
-  "dependencies": {
-    "@types/randomstring": "^1.1.6",
-    "@types/request": "^2.47.1",
-    "@types/request-promise-native": "^1.0.15",
-    "randomstring": "^1.1.5",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.5",
-    "simple-sandbox": "^0.3.5"
-  }
+    "name": "light-judger",
+    "version": "1.0.0",
+    "description": "Judger for LightOnlineJudge",
+    "main": "dist/index.js",
+    "repository": "https://github.com/ZhangZisu/LightJudger",
+    "author": "ZhangZisu",
+    "license": "Apache-2.0",
+    "private": false,
+    "dependencies": {
+        "randomstring": "^1.1.5",
+        "request": "^2.88.0",
+        "request-promise-native": "^1.0.5",
+        "simple-sandbox": "^0.3.5"
+    },
+    "devDependencies": {
+        "@types/randomstring": "^1.1.6",
+        "@types/request": "^2.47.1",
+        "@types/request-promise-native": "^1.0.15",
+    }
 }
