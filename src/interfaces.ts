@@ -12,8 +12,15 @@ export interface ISolutionModel {
     meta?: any;
 }
 
+export interface IProblemModel {
+    data: any;
+    meta?: any;
+}
+
 export interface IJudgerConfig {
     server: string;
     username: string;
     password: string;
+    user: string;
+    cgroup: string;
 }
