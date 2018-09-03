@@ -1,6 +1,10 @@
 export interface IBFileModel {
     _id: string;
     hash: string;
+    owner: string;
+    description: string;
+    type: string;
+    created?: Date;
 }
 
 export interface ISolutionModel {
@@ -23,4 +27,5 @@ export interface IJudgerConfig {
     password: string;
     user: string;
     cgroup: string;
+    chroot: string;
 }

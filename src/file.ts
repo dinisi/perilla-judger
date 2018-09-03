@@ -18,7 +18,7 @@ const existsFile = (fileID: string) => {
     return fs.existsSync(getFilePath(fileID));
 };
 
-const getFileMeta = (fileID: string): IBFileModel => {
+export const getFileMeta = (fileID: string): IBFileModel => {
     return JSON.parse(fs.readFileSync(getFileMetaPath(fileID)).toString()) as IBFileModel;
 };
 
