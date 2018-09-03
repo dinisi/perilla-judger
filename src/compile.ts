@@ -1,14 +1,15 @@
 import { copyFileSync, emptyDirSync, ensureDirSync, pathExists, readFileSync } from "fs-extra";
 import { join, resolve } from "path";
 import * as sandbox from "simple-sandbox";
-import { SandboxParameter } from "simple-sandbox/src/interfaces";
+import { SandboxParameter, SandboxStatus } from "simple-sandbox/src/interfaces";
 import { getFile, getFileMeta } from "./file";
 import { ICompileResult, IJudgerConfig } from "./interfaces";
 import { getLanguageInfo } from "./languages";
+import { shortRead } from "./shortRead";
 
 const compileDir = resolve("files/tmp/compile");
 
-export const compile = async (config: IJudgerConfig, fileID: string): ICompileResult => {
+export const compile = async (config: IJudgerConfig, fileID: string): Promise<ICompileResult> => {
     const source = await getFile(fileID);
     const meta = getFileMeta(fileID);
     ensureDirSync(compileDir);
@@ -41,13 +42,20 @@ export const compile = async (config: IJudgerConfig, fileID: string): ICompileRe
         };
         const compileProcess = await sandbox.startSandbox(compileParameter);
         const compileResult = await compileProcess.waitForStop();
+        const compileOutput = `stdout:\n${shortRead(join(compileDir, "stdout"))}\nstderr:\n${shortRead(join(compileDir, "stderr"))}\n`;
+        const result: ICompileResult = {
+            execFile: join(compileDir, info.execFilename),
+            output: compileOutput,
+            success: compileResult.status !== SandboxStatus.OK,
+        };
+        return result;
     } else {
         copyFileSync(source, join(compileDir, info.execFilename));
-        return {
-            success: true,
+        const result: ICompileResult = {
+            execFile: join(compileDir, info.execFilename),
             output: "",
-            execFilename: ,
+            success: true,
         };
+        return result;
     }
-    return join(compileDir, info.execFilename);
 };

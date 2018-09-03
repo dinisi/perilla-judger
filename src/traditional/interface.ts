@@ -32,17 +32,19 @@ export interface ITestcaseResult {
 
 export interface ISubtaskResult {
     name: string;
-    testcases: ITestcaseResult[];
+    testcases?: ITestcaseResult[];
     status: string;
     score: number;
-    time: number;
-    memory: number;
+    time?: number;
+    memory?: number;
 }
 
 export interface ITraditionProblemResult {
-    subtasks: ISubtask[];
-    status: string;
+    subtasks?: any;
     score: number;
-    time: number;
-    memory: number;
+    time?: number;
+    memory?: number;
+    compileResult?: string;
+    judgerCompileResult?: string;
+    log?: string;
 }
