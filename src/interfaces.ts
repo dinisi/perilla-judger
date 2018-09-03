@@ -29,3 +29,17 @@ export interface IJudgerConfig {
     cgroup: string;
     chroot: string;
 }
+
+export interface ILanguageInfo {
+    requireCompile: boolean;
+    sourceFilename: string;
+    execFilename: string;
+    compilerPath: string;
+    parameters: string[];
+}
+
+export interface ICompileResult {
+    success: boolean;
+    output: string;
+    execFile: string;
+}
