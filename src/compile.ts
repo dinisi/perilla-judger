@@ -1,7 +1,7 @@
 import { copyFileSync, emptyDirSync, ensureDirSync, pathExists, readFileSync } from "fs-extra";
 import { join, resolve } from "path";
 import * as sandbox from "simple-sandbox";
-import { SandboxParameter, SandboxStatus } from "simple-sandbox/src/interfaces";
+import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
 import { getFile, getFileMeta } from "./file";
 import { ICompileResult, IJudgerConfig } from "./interfaces";
 import { getLanguageInfo } from "./languages";

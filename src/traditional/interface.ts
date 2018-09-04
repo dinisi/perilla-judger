@@ -1,14 +1,14 @@
 export interface ITestcase {
-    inputFile: string;
-    outputFile: string;
+    input: string;
+    output: string;
 }
 
 export interface ISubtask {
     name: string;
     score: number;
     testcases: ITestcase[];
-    depends: string[];
-    type: string;
+    depends?: string[];
+    autoSkip: boolean;
     timeLimit: string;
     memoryLimit: string;
 }
