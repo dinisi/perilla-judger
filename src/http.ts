@@ -28,34 +28,34 @@ export const initialize = async (config: IJudgerConfig) => {
             rolename: "Judgers",
             username: config.username,
         };
-        request.post({ url, form }, (err, httpResponse, body) => {
-            res(body);
+        request.post({ url, form }, (err, httpResponse, responseBody) => {
+            res(responseBody);
         });
     });
 };
 
-export const get = async (requestURL: string, queries: any) => {
+export const get = async (requestURL: string, queries: any): Promise<string> => {
     const q = { v: getVerificationCode(authorization, clientID) };
     Object.assign(q, queries);
-    return await new Promise((res) => {
+    return await new Promise<string>((res) => {
         const url = baseURL + requestURL;
         const qs = q;
         const headers = { authorization };
-        request.get({ url, qs, headers }, (err, httpResponse, body) => {
-            res(body);
+        request.get({ url, qs, headers }, (err, httpResponse, responseBody) => {
+            res(responseBody);
         });
     });
 };
 
-export const post = async (requestURL: string, queries: any, form: any) => {
+export const post = async (requestURL: string, queries: any, body: any): Promise<string> => {
     const q = { v: getVerificationCode(authorization, clientID) };
     Object.assign(q, queries);
-    return await new Promise((res) => {
+    return await new Promise<string>((res) => {
         const url = baseURL + requestURL;
         const qs = q;
-        const headers = { authorization };
-        request.post({ url, qs, headers, form }, (err, httpResponse, body) => {
-            res(body);
+        const headers = { authorization, "content-type": "application/json" };
+        request.post({ url, qs, headers, body, json: true }, (err, httpResponse, responseBody) => {
+            res(responseBody);
         });
     });
 };

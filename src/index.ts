@@ -18,9 +18,9 @@ const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: 
 };
 
 const startJudge = async (config: IJudgerConfig) => {
-    initialize(config);
+    await initialize(config);
     const judgeLoop = async () => {
-        const solutionID = (await instance.rpop("judgeTask", 0));
+        const solutionID = (await instance.rpopAsync("judgeTask"));
         if (solutionID) {
             const solution = await getSolution(solutionID);
             const problem = await getProblem(solution.problemID);
@@ -28,13 +28,14 @@ const startJudge = async (config: IJudgerConfig) => {
         }
         setTimeout(judgeLoop, 50);
     };
+    judgeLoop();
 };
 
 startJudge({
     cgroup: "test",
     chroot: "/run/media/zhangzisu/Data",
-    password: "vpZCyAimOE",
-    server: "http://127.0.0.1",
+    password: "GkvVpuSzhb",
+    server: "http://127.0.0.1:3000",
     user: "zhangzisu",
     username: "Judger",
 });
