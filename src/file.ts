@@ -3,15 +3,14 @@ import { resolve } from "path";
 import { download, get } from "./http";
 import { IBFileModel } from "./interfaces";
 
-fs.ensureDirSync("files/raw");
-fs.ensureDirSync("files/meta");
+fs.ensureDirSync("files");
 
 const getFilePath = (fileID: string) => {
-    return resolve("files", "raw", fileID);
+    return resolve("files", fileID + ".raw");
 };
 
 const getFileMetaPath = (fileID: string) => {
-    return resolve("files", "meta", fileID);
+    return resolve("files", fileID + ".meta");
 };
 
 const existsFile = (fileID: string) => {
@@ -45,8 +44,8 @@ const downloadFile = async (fileID: string) => {
 };
 
 export const getFile = async (fileID: string) => {
-    if (outdatedFile(fileID)) {
-        downloadFile(fileID);
+    if (await outdatedFile(fileID)) {
+        await downloadFile(fileID);
     }
     return getFilePath(fileID);
 };

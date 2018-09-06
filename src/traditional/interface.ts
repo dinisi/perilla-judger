@@ -9,8 +9,8 @@ export interface ISubtask {
     testcases: ITestcase[];
     depends?: string[];
     autoSkip: boolean;
-    timeLimit: string;
-    memoryLimit: string;
+    timeLimit: number;
+    memoryLimit: number;
 }
 
 export interface ITraditionProblemDataConfig {
@@ -47,4 +47,16 @@ export interface ITraditionProblemResult {
     compileResult?: string;
     judgerCompileResult?: string;
     log?: string;
+}
+
+export interface ILanguageInfo {
+    requireCompile: boolean;
+    sourceFilename: string;
+    execFilename: string;
+    compilerPath: string;
+    compilerParameters: string[];
+    execPath: string;
+    execParameters: string[];
+    judgePath: string;
+    judgeParameters: string[];
 }

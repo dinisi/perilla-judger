@@ -33,7 +33,7 @@ const startJudge = async (config: IJudgerConfig) => {
 
 startJudge({
     cgroup: "test",
-    chroot: "/run/media/zhangzisu/Data",
+    chroot: "/run/media/zhangzisu/Data/RootFS",
     password: "GkvVpuSzhb",
     server: "http://127.0.0.1:3000",
     user: "zhangzisu",

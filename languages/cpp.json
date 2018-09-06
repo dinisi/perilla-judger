@@ -1,0 +1,17 @@
+{
+    "requireCompile": true,
+    "sourceFilename": "main.cpp",
+    "execFilename": "main",
+    "compilerPath": "/usr/bin/g++",
+    "compilerParameters": [
+        "/usr/bin/g++",
+        "main.cpp",
+        "-o",
+        "main",
+        "-Wall",
+        "-O2",
+        "-std=c++14"
+    ],
+    "execPath": "./main",
+    "execParameters": "main"
+}
