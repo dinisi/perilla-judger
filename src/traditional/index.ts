@@ -1,4 +1,4 @@
-import { copyFile, copyFileSync, emptyDir, ensureDirSync } from "fs-extra";
+import { copyFileSync, emptyDir, ensureDirSync } from "fs-extra";
 import { join, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
