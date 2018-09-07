@@ -188,7 +188,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                     memory: 0,
                     output: "",
                     score: 0,
-                    status: "",
+                    status: "Error",
                     stderr: "",
                     stdout: "",
                     time: 0,
@@ -200,7 +200,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         const judgeTask = async (name: string) => {
             try {
                 const tasks = subtasks[name] as ISubtask;
-                solution.result.subtasks[name] = { name, status: "Judging", score: 0, time: 0, memory: 0, testcases: [] };
+                solution.result.subtasks[name] = { status: "Judging", score: 0, time: 0, memory: 0, testcases: [] };
                 const scorePerCase = tasks.score / tasks.testcases.length;
                 for (const test of tasks.testcases) {
                     const result = await judgeTest(test.input, test.output, tasks.timeLimit, tasks.memoryLimit);
@@ -229,7 +229,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                     return;
                 }
                 subtasks[name].resolved = true;
-                solution.result.subtasks[name] = { name };
+                solution.result.subtasks[name] = {};
                 if (subtasks[name].depends && subtasks[name].depends instanceof Array) {
                     for (const dep of subtasks[name].depends) {
                         await resolveSubtask(dep);
@@ -244,6 +244,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                 if (solution.status === "Judging" && !(solution.result.subtasks[name].status === "Accepted")) {
                     solution.status = solution.result.subtasks[name].status;
                 }
+                await updateSolution(solution);
             } catch (e) {
                 solution.status = "Failed";
             }
@@ -251,6 +252,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
 
         solution.result.subtasks = {};
         solution.status = "Judging";
+        await updateSolution(solution);
 
         for (const name in subtasks) {
             if (subtasks[name].judged) { continue; }
