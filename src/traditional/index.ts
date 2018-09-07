@@ -1,12 +1,14 @@
-import { emptyDir, ensureDirSync } from "fs-extra";
-import { resolve } from "path";
+import { copyFile, copyFileSync, emptyDir, ensureDirSync } from "fs-extra";
+import { join, resolve } from "path";
+import { startSandbox } from "simple-sandbox";
+import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
 import { compile } from "../compile";
 import { getFile, getFileMeta } from "../file";
-import { IJudgerConfig, IProblemModel, ISolutionModel } from "../interfaces";
+import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel } from "../interfaces";
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
 import { updateSolution } from "../solution";
-import { ILanguageInfo, ISubtask, ITestcaseResult, ITraditionProblemDataConfig, ITraditionProblemResult } from "./interface";
+import { ISubtask, ITestcaseResult, ITraditionProblemDataConfig, ITraditionProblemResult } from "./interface";
 
 export const traditional = async (config: IJudgerConfig, solution: ISolutionModel, problem: IProblemModel) => {
     const sourceFile = solution.files[0];
@@ -25,8 +27,8 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         solution.status = "Solution CE";
         return;
     }
-    const judgerLanguageInfo = getLanguageInfo(getFileMeta(data.judgerFile).type)as ILanguageInfo;
-    const solutionLanguageInfo = getLanguageInfo(getFileMeta(sourceFile).type)as ILanguageInfo;
+    const judgerLanguageInfo = getLanguageInfo(getFileMeta(data.judgerFile).type) as ILanguageInfo;
+    const solutionLanguageInfo = getLanguageInfo(getFileMeta(sourceFile).type) as ILanguageInfo;
 
     const subtasks: any = {};
     for (const subtask of data.subtasks) {
@@ -35,46 +37,111 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         subtasks[subtask.name].judged = false;
     }
 
-    const judgeTest = async (input: string, output: string, timeLimit: number, memoryLimit: number): ITestcaseResult {
+    // JudgeTest
+    const judgeTest = async (input: string, output: string, timeLimit: number, memoryLimit: number): Promise<ITestcaseResult> => {
         input = await getFile(input);
         output = await getFile(output);
 
-        const runDir = resolve("files/tmp/run");
+        const runDir = resolve("files/tmp/run/run");
+        const tmpDir = resolve("files/tmp/run/tmp");
         ensureDirSync(runDir);
+        ensureDirSync(tmpDir);
         emptyDir(runDir);
+        emptyDir(tmpDir);
+        const stdout = join(tmpDir, "stdout");
+        const stderr = join(tmpDir, "stderr");
+        const extra = join(tmpDir, "extra");
 
-        const runParameter: SandboxParameter = {
+        copyFileSync(solutionCompileResult.execFile, runDir);
+        const solutionRunParameter: SandboxParameter = {
             cgroup: config.cgroup,
             chroot: config.chroot,
             environments: ["PATH=/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
             executable: solutionLanguageInfo.execPath,
-            memory: 512 * 1024 * 1024,
+            memory: memoryLimit,
             mountProc: true,
             mounts: [
                 {
                     dst: "/root",
                     limit: -1,
-                    src: compileDir,
+                    src: runDir,
                 },
             ],
-            parameters: info.compilerParameters,
+            parameters: solutionLanguageInfo.execParameters,
             process: -1,
-            redirectBeforeChroot: false,
-            stderr: "stderr",
-            stdout: "stdout",
-            time: 10000,
+            redirectBeforeChroot: true,
+            stderr,
+            stdin: input,
+            stdout,
+            time: timeLimit,
             user: config.user,
             workingDirectory: "/root",
         };
 
+        const solutionProcess = await startSandbox(solutionRunParameter);
+        const solutionRunResult = await solutionProcess.waitForStop();
+
         const result: ITestcaseResult = {
+            extra: "",
             input: shortRead(input),
+            memory: solutionRunResult.memory,
             output: shortRead(output),
-            //
+            score: 0,
+            status: "",
+            stderr: shortRead(stderr),
+            stdout: shortRead(stdout),
+            time: solutionRunResult.time,
         };
+
+        if (solutionRunResult.status !== SandboxStatus.OK) {
+            result.status = SandboxStatus[solutionRunResult.status];
+            result.extra = JSON.stringify(solutionRunResult);
+            return result;
+        }
+
+        emptyDir(runDir);
+        copyFileSync(stdout, join(runDir, "stdout"));
+        copyFileSync(stderr, join(runDir, "stderr"));
+        copyFileSync(input, join(runDir, "input"));
+        copyFileSync(output, join(runDir, "output"));
+        copyFileSync(sourceFile, join(runDir, "source"));
+        copyFileSync(judgerCompileResult.execFile, runDir);
+        const judgerRunParameter: SandboxParameter = {
+            cgroup: config.cgroup,
+            chroot: config.chroot,
+            environments: ["PATH=/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
+            executable: judgerLanguageInfo.execPath,
+            memory: memoryLimit,
+            mountProc: true,
+            mounts: [
+                {
+                    dst: "/root",
+                    limit: -1,
+                    src: runDir,
+                },
+            ],
+            parameters: judgerLanguageInfo.execParameters,
+            process: -1,
+            redirectBeforeChroot: true,
+            stdout: extra,
+            time: timeLimit,
+            user: config.user,
+            workingDirectory: "/root",
+        };
+        const judgerProcess = await startSandbox(judgerRunParameter);
+        const judgerRunResult = await judgerProcess.waitForStop();
+        result.extra = shortRead(extra);
+        if (judgerRunResult.status === SandboxStatus.OK && judgerRunResult.code === 0) {
+            result.score = 1;
+            result.status = "Accepted";
+        } else {
+            result.score = 0;
+            result.status = "Wrong Answer";
+        }
         return result;
     };
 
+    // JudgeTask
     const judgeTask = async (name: string) => {
         const tasks = subtasks[name] as ISubtask;
         solution.result.subtasks[name] = { name, status: "Judging", score: 0, time: 0, memory: 0, testcases: [] };

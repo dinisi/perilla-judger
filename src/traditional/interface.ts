@@ -48,15 +48,3 @@ export interface ITraditionProblemResult {
     judgerCompileResult?: string;
     log?: string;
 }
-
-export interface ILanguageInfo {
-    requireCompile: boolean;
-    sourceFilename: string;
-    execFilename: string;
-    compilerPath: string;
-    compilerParameters: string[];
-    execPath: string;
-    execParameters: string[];
-    judgePath: string;
-    judgeParameters: string[];
-}

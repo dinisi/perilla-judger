@@ -43,3 +43,15 @@ export interface ICompileResult {
     output: string;
     execFile: string;
 }
+
+export interface ILanguageInfo {
+    requireCompile: boolean;
+    sourceFilename: string;
+    execFilename: string;
+    compilerPath: string;
+    compilerParameters: string[];
+    execPath: string;
+    execParameters: string[];
+    judgePath: string;
+    judgeParameters: string[];
+}

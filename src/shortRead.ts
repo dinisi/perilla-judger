@@ -1,6 +1,7 @@
-import { closeSync, fstatSync, openSync, readFileSync, readSync } from "fs";
+import { closeSync, existsSync, fstatSync, openSync, readFileSync, readSync } from "fs";
 
 export const shortRead = (file: string) => {
+    if (!existsSync(file)) { return "File not found"; }
     const fd = openSync(file, "r");
     const len = fstatSync(fd).size;
     if (len > 128) {
