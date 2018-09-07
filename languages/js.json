@@ -1,0 +1,12 @@
+{
+    "requireCompile": false,
+    "sourceFilename": "main.js",
+    "compiledFilename": "main.js",
+    "compilerPath": "",
+    "compilerParameters": [],
+    "execPath": "/usr/bin/node",
+    "execParameters": [
+        "/usr/bin/node",
+        "main.js"
+    ]
+}

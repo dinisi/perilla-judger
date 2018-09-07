@@ -1,4 +1,4 @@
-import { copyFileSync, emptyDir, ensureDirSync } from "fs-extra";
+import { copyFileSync, copySync, emptyDir, emptyDirSync, ensureDirSync, existsSync } from "fs-extra";
 import { join, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
@@ -10,6 +10,9 @@ import { shortRead } from "../shortRead";
 import { updateSolution } from "../solution";
 import { ISubtask, ITestcaseResult, ITraditionProblemDataConfig, ITraditionProblemResult } from "./interface";
 
+const solutionDir = resolve("files/tmp/judge/solution/");
+const judgerDir = resolve("files/tmp/judge/judger/");
+
 export const traditional = async (config: IJudgerConfig, solution: ISolutionModel, problem: IProblemModel) => {
     const sourceFile = solution.files[0];
     const data = problem.data as ITraditionProblemDataConfig;
@@ -17,18 +20,32 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
     solution.result = { score: 0 };
     await updateSolution(solution);
 
+    ensureDirSync(solutionDir);
+    emptyDirSync(solutionDir);
+    ensureDirSync(judgerDir);
+    emptyDirSync(judgerDir);
+
     const judgerCompileResult = await compile(config, data.judgerFile);
+    solution.result.judgerCompileResult = judgerCompileResult.output;
     if (!judgerCompileResult.success) {
         solution.status = "Judger CE";
-        return;
-    }
-    const solutionCompileResult = await compile(config, sourceFile);
-    if (!solutionCompileResult.success) {
-        solution.status = "Solution CE";
+        await updateSolution(solution);
         return;
     }
     const judgerLanguageInfo = getLanguageInfo(getFileMeta(data.judgerFile).type) as ILanguageInfo;
+    const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
+    copySync(judgerCompileResult.execFile, judgerExecFile);
+
+    const solutionCompileResult = await compile(config, sourceFile);
+    solution.result.compileResult = solutionCompileResult.output;
+    if (!solutionCompileResult.success) {
+        solution.status = "Solution CE";
+        await updateSolution(solution);
+        return;
+    }
     const solutionLanguageInfo = getLanguageInfo(getFileMeta(sourceFile).type) as ILanguageInfo;
+    const solutionExecFile = join(solutionDir, solutionLanguageInfo.compiledFilename);
+    copySync(solutionCompileResult.execFile, solutionExecFile);
 
     const subtasks: any = {};
     for (const subtask of data.subtasks) {
@@ -52,7 +69,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         const stderr = join(tmpDir, "stderr");
         const extra = join(tmpDir, "extra");
 
-        copyFileSync(solutionCompileResult.execFile, runDir);
+        copyFileSync(solutionExecFile, join(runDir, solutionLanguageInfo.compiledFilename));
         const solutionRunParameter: SandboxParameter = {
             cgroup: config.cgroup,
             chroot: config.chroot,
@@ -100,12 +117,12 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         }
 
         emptyDir(runDir);
-        copyFileSync(stdout, join(runDir, "stdout"));
-        copyFileSync(stderr, join(runDir, "stderr"));
+        if (existsSync(stdout)) { copyFileSync(stdout, join(runDir, "stdout")); }
+        if (existsSync(stderr)) { copyFileSync(stderr, join(runDir, "stderr")); }
         copyFileSync(input, join(runDir, "input"));
         copyFileSync(output, join(runDir, "output"));
-        copyFileSync(sourceFile, join(runDir, "source"));
-        copyFileSync(judgerCompileResult.execFile, runDir);
+        copyFileSync(await getFile(sourceFile), join(runDir, "source"));
+        copyFileSync(judgerExecFile, join(runDir, solutionLanguageInfo.compiledFilename));
         const judgerRunParameter: SandboxParameter = {
             cgroup: config.cgroup,
             chroot: config.chroot,
@@ -169,12 +186,14 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         }
         subtasks[name].resolved = true;
         solution.result.subtasks[name] = { name };
-        for (const dep of subtasks[name].depends) {
-            await resolveSubtask(dep);
-            if (solution.result.subtasks[dep].status !== "Accepted") {
-                solution.result.subtasks[name].status = "Skipped";
-                solution.result.subtasks[name].score = 0;
-                return;
+        if (subtasks[name].depends && subtasks[name].depends instanceof Array) {
+            for (const dep of subtasks[name].depends) {
+                await resolveSubtask(dep);
+                if (solution.result.subtasks[dep].status !== "Accepted") {
+                    solution.result.subtasks[name].status = "Skipped";
+                    solution.result.subtasks[name].score = 0;
+                    return;
+                }
             }
         }
         solution.result.subtasks[name] = await judgeTask(name);

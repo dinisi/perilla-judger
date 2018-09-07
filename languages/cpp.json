@@ -1,7 +1,7 @@
 {
     "requireCompile": true,
     "sourceFilename": "main.cpp",
-    "execFilename": "main",
+    "compiledFilename": "main",
     "compilerPath": "/usr/bin/g++",
     "compilerParameters": [
         "/usr/bin/g++",

@@ -3,10 +3,10 @@ import { join, resolve } from "path";
 import * as sandbox from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
 import { getFile, getFileMeta } from "./file";
+import { ILanguageInfo } from "./interfaces";
 import { ICompileResult, IJudgerConfig } from "./interfaces";
 import { getLanguageInfo } from "./language";
 import { shortRead } from "./shortRead";
-import { ILanguageInfo } from "./traditional/interface";
 
 const compileDir = resolve("files/tmp/compile");
 
@@ -47,15 +47,15 @@ export const compile = async (config: IJudgerConfig, fileID: string): Promise<IC
             const compileResult = await compileProcess.waitForStop();
             const compileOutput = `stdout:\n${shortRead(join(compileDir, "stdout"))}\nstderr:\n${shortRead(join(compileDir, "stderr"))}\n`;
             const result: ICompileResult = {
-                execFile: join(compileDir, info.execFilename),
+                execFile: join(compileDir, info.compiledFilename),
                 output: compileOutput,
-                success: compileResult.status === SandboxStatus.OK && existsSync(join(compileDir, info.execFilename)),
+                success: compileResult.status === SandboxStatus.OK && existsSync(join(compileDir, info.compiledFilename)),
             };
             return result;
         } else {
-            copyFileSync(source, join(compileDir, info.execFilename));
+            copyFileSync(source, join(compileDir, info.compiledFilename));
             const result: ICompileResult = {
-                execFile: join(compileDir, info.execFilename),
+                execFile: join(compileDir, info.compiledFilename),
                 output: "",
                 success: true,
             };

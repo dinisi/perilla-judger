@@ -30,14 +30,6 @@ export interface IJudgerConfig {
     chroot: string;
 }
 
-export interface ILanguageInfo {
-    requireCompile: boolean;
-    sourceFilename: string;
-    execFilename: string;
-    compilerPath: string;
-    parameters: string[];
-}
-
 export interface ICompileResult {
     success: boolean;
     output: string;
@@ -47,7 +39,7 @@ export interface ICompileResult {
 export interface ILanguageInfo {
     requireCompile: boolean;
     sourceFilename: string;
-    execFilename: string;
+    compiledFilename: string;
     compilerPath: string;
     compilerParameters: string[];
     execPath: string;

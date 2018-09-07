@@ -31,11 +31,20 @@ const startJudge = async (config: IJudgerConfig) => {
     judgeLoop();
 };
 
+// startJudge({
+//     cgroup: "test",
+//     chroot: "/run/media/zhangzisu/Data/RootFS",
+//     password: "GkvVpuSzhb",
+//     server: "http://127.0.0.1:3000",
+//     user: "zhangzisu",
+//     username: "Judger",
+// });
+
 startJudge({
     cgroup: "test",
-    chroot: "/run/media/zhangzisu/Data/RootFS",
-    password: "GkvVpuSzhb",
+    chroot: "/home/zhangzisu/RootFS",
+    password: "37SYojsZ3z",
     server: "http://127.0.0.1:3000",
-    user: "zhangzisu",
+    user: "root",
     username: "Judger",
 });
