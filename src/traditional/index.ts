@@ -169,12 +169,12 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             solution.result.subtasks[name].time += result.time;
             solution.result.subtasks[name].memory += result.memory;
             solution.result.subtasks[name].score += result.score * scorePerCase;
-            if (solution.status === "Judging" && !(result.status === "Accepted")) {
-                solution.status = result.status;
+            if (solution.result.subtasks[name].status === "Judging" && !(result.status === "Accepted")) {
+                solution.result.subtasks[name].status = result.status;
                 if (tasks.autoSkip) { break; }
             }
         }
-        if (solution.status === "Judging") { solution.status = "Accepted"; }
+        if (solution.result.subtasks[name].status === "Judging") { solution.result.subtasks[name].status = "Accepted"; }
     };
 
     const resolveSubtask = async (name: string) => {
@@ -197,8 +197,14 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             }
         }
         solution.result.subtasks[name] = await judgeTask(name);
+        if (solution.status === "Judging" && !(solution.result.subtasks[name].status === "Accepted")) {
+            solution.status = solution.result.subtasks[name].status;
+        }
     };
+
     solution.result.subtasks = {};
+    solution.status = "Judging";
+
     for (const name in subtasks) {
         if (subtasks[name].judged) { continue; }
         await resolveSubtask(name);
@@ -208,7 +214,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
     solution.result.memory = 0;
     for (const name in subtasks) {
         if (solution.result.subtasks[name]) {
-            solution.result.score = solution.result.subtasks[name].score / 100 * subtasks[name].score;
+            solution.result.score += solution.result.subtasks[name].score;
             if (solution.result.subtasks[name].time) {
                 solution.result.time += solution.result.subtasks[name].time;
             }
