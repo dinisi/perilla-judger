@@ -1,5 +1,9 @@
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 
 export const getLanguageInfo = (language: string) => {
-    return JSON.parse(readFileSync(__dirname + `/../languages/${language}.json`).toString());
+    if (existsSync(__dirname + `/../languages/${language}.json`)) {
+        return JSON.parse(readFileSync(__dirname + `/../languages/${language}.json`).toString());
+    } else {
+        throw new Error("Language rejected");
+    }
 };

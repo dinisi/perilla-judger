@@ -10,9 +10,14 @@ promisifyAll(redis);
 const instance: any = redis.createClient();
 
 const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: IProblemModel) => {
-    solution.status = "Judging";
-    await updateSolution(solution);
+    solution.status = "Processing";
     if (problem.data.type === "traditional") {
+        solution.result = { type: "traditional" };
+        await updateSolution(solution);
+        await traditional(config, solution, problem);
+    } else if (problem.data.type === "remote") {
+        solution.result = { type: "remote" };
+        await updateSolution(solution);
         await traditional(config, solution, problem);
     }
 };
