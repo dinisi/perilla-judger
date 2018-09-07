@@ -1,4 +1,4 @@
-import { copyFileSync, copySync, emptyDir, emptyDirSync, ensureDirSync, existsSync } from "fs-extra";
+import { copyFileSync, copySync, emptyDirSync, ensureDirSync, existsSync } from "fs-extra";
 import { join, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
@@ -56,20 +56,26 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
 
     // JudgeTest
     const judgeTest = async (input: string, output: string, timeLimit: number, memoryLimit: number): Promise<ITestcaseResult> => {
+        // 获取文件
         input = await getFile(input);
         output = await getFile(output);
 
+        // 初始化临时文件夹
         const runDir = resolve("files/tmp/run/run");
         const tmpDir = resolve("files/tmp/run/tmp");
         ensureDirSync(runDir);
         ensureDirSync(tmpDir);
-        emptyDir(runDir);
-        emptyDir(tmpDir);
+        emptyDirSync(runDir);
+        emptyDirSync(tmpDir);
+
+        // 预分配文件路径
         const stdout = join(tmpDir, "stdout");
         const stderr = join(tmpDir, "stderr");
         const extra = join(tmpDir, "extra");
 
+        // 初始化用户程序环境
         copyFileSync(solutionExecFile, join(runDir, solutionLanguageInfo.compiledFilename));
+        copyFileSync(input, join(runDir, "stdin"));
         const solutionRunParameter: SandboxParameter = {
             cgroup: config.cgroup,
             chroot: config.chroot,
@@ -86,18 +92,22 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             ],
             parameters: solutionLanguageInfo.execParameters,
             process: -1,
-            redirectBeforeChroot: true,
-            stderr,
-            stdin: input,
-            stdout,
+            redirectBeforeChroot: false,
+            stderr: "stderr",
+            stdin: "stdin",
+            stdout: "stdout",
             time: timeLimit,
             user: config.user,
             workingDirectory: "/root",
         };
 
+        // 用户程序运行结果
         const solutionProcess = await startSandbox(solutionRunParameter);
         const solutionRunResult = await solutionProcess.waitForStop();
+        copyFileSync(join(runDir, "stdout"), stdout);
+        copyFileSync(join(runDir, "stderr"), stderr);
 
+        // 初始化返回值 ITestcaseResult
         const result: ITestcaseResult = {
             extra: "",
             input: shortRead(input),
@@ -110,15 +120,24 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             time: solutionRunResult.time,
         };
 
+        // 用户程序非正常退出
         if (solutionRunResult.status !== SandboxStatus.OK) {
             result.status = SandboxStatus[solutionRunResult.status];
             result.extra = JSON.stringify(solutionRunResult);
             return result;
         }
 
-        emptyDir(runDir);
-        if (existsSync(stdout)) { copyFileSync(stdout, join(runDir, "stdout")); }
-        if (existsSync(stderr)) { copyFileSync(stderr, join(runDir, "stderr")); }
+        // 初始化评分环境
+        // 评分程序目录结构：
+        // /root/execFile
+        //      /stdout: 用户输出流
+        //      /stderr: 用户错误流
+        //      /input : 标准输入
+        //      /output: 标准输出
+        //      /source: 用户程序
+        emptyDirSync(runDir);
+        copyFileSync(stdout, join(runDir, "stdout"));
+        copyFileSync(stderr, join(runDir, "stderr"));
         copyFileSync(input, join(runDir, "input"));
         copyFileSync(output, join(runDir, "output"));
         copyFileSync(await getFile(sourceFile), join(runDir, "source"));
@@ -139,14 +158,18 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             ],
             parameters: judgerLanguageInfo.execParameters,
             process: -1,
-            redirectBeforeChroot: true,
-            stdout: extra,
+            redirectBeforeChroot: false,
+            stdout: "extra",
             time: timeLimit,
             user: config.user,
             workingDirectory: "/root",
         };
+
+        // 获得评测结果 正常退出=1 非正常退出=0
         const judgerProcess = await startSandbox(judgerRunParameter);
         const judgerRunResult = await judgerProcess.waitForStop();
+        copyFileSync(join(runDir, "extra"), extra);
+
         result.extra = shortRead(extra);
         if (judgerRunResult.status === SandboxStatus.OK && judgerRunResult.code === 0) {
             result.score = 1;
@@ -196,7 +219,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                 }
             }
         }
-        solution.result.subtasks[name] = await judgeTask(name);
+        await judgeTask(name);
         if (solution.status === "Judging" && !(solution.result.subtasks[name].status === "Accepted")) {
             solution.status = solution.result.subtasks[name].status;
         }
