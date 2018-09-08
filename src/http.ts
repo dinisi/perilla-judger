@@ -20,7 +20,7 @@ let baseURL: string;
 export const initialize = async (config: IJudgerConfig) => {
     baseURL = config.server;
     clientID = generate(50);
-    authorization = await new Promise<string>((res) => {
+    authorization = await new Promise<string>((res, rej) => {
         const url = baseURL + "/login";
         const form = {
             clientID,
@@ -29,44 +29,60 @@ export const initialize = async (config: IJudgerConfig) => {
             username: config.username,
         };
         request.post({ url, form }, (err, httpResponse, responseBody) => {
-            res(responseBody);
+            if (err) {
+                rej(err);
+            } else {
+                const parsed = JSON.parse(responseBody);
+                if (parsed.status !== "success") { rej(parsed.payload); }
+                res(parsed.payload);
+            }
         });
     });
 };
 
 export const get = async (requestURL: string, queries: any): Promise<string> => {
-    const q = { v: getVerificationCode(authorization, clientID) };
+    const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
-    return await new Promise<string>((res) => {
+    return await new Promise<string>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
-        const headers = { authorization };
-        request.get({ url, qs, headers }, (err, httpResponse, responseBody) => {
-            res(responseBody);
+        request.get({ url, qs }, (err, httpResponse, responseBody) => {
+            if (err) {
+                rej(err);
+            } else {
+                const parsed = JSON.parse(responseBody);
+                if (parsed.status !== "success") { rej(parsed.payload); }
+                res(parsed.payload);
+            }
         });
     });
 };
 
-export const post = async (requestURL: string, queries: any, body: any): Promise<string> => {
-    const q = { v: getVerificationCode(authorization, clientID) };
+export const post = async (requestURL: string, queries: any, form: any): Promise<string> => {
+    const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
-    return await new Promise<string>((res) => {
+    return await new Promise<string>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
-        const headers = { authorization, "content-type": "application/json" };
-        request.post({ url, qs, headers, body, json: true }, (err, httpResponse, responseBody) => {
-            res(responseBody);
+        request.post({ url, qs, form }, (err, httpResponse, responseBody) => {
+            if (err) {
+                rej(err);
+            } else {
+                const parsed = JSON.parse(responseBody);
+                if (parsed.status !== "success") { rej(parsed.payload); }
+                res(parsed.payload);
+            }
         });
     });
 };
 
 export const download = async (requestURL: string, queries: any, path: string) => {
-    const q = { v: getVerificationCode(authorization, clientID) };
+    const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
-    return await new Promise((res) => {
+    return await new Promise((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
         const headers = { authorization };
-        request.get({ url, qs, headers }).pipe(createWriteStream(path)).on("close", () => res());
+        request.get({ url, qs, headers }).pipe(createWriteStream(path)).on("close", () => res()).on("error", () => rej());
     });
 };

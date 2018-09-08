@@ -1,5 +1,6 @@
 import { promisifyAll } from "bluebird";
 import * as redis from "redis";
+import { launchChrome } from "./chromeHelper";
 import { initialize } from "./http";
 import { IJudgerConfig, IProblemModel, ISolutionModel } from "./interfaces";
 import { getProblem } from "./problem";
@@ -24,6 +25,7 @@ const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: 
 
 const startJudge = async (config: IJudgerConfig) => {
     await initialize(config);
+    await launchChrome();
     const judgeLoop = async () => {
         const solutionID = (await instance.rpopAsync("judgeTask"));
         if (solutionID) {

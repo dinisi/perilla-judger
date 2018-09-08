@@ -11,4 +11,5 @@ export interface IRemoteProblemResult {
 export interface ICrawerResult {
     status: string;
     result: any;
+    finished: boolean;
 }
