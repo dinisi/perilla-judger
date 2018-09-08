@@ -1,5 +1,7 @@
 import { Page } from "puppeteer";
 import { declarePage } from "../../chromeHelper";
+import { ISolutionModel } from "../../interfaces";
+import { updateSolution } from "../../solution";
 import { ICrawerResult } from "../interfaces";
 
 const POJUsername: string = "zhangzisu";
@@ -36,7 +38,7 @@ export const submitProblem = async (problemID: string, source: string, language:
         return t.childNodes[0].childNodes[2].childNodes[0].textContent;
     });
 };
-export const getSubmissionState = async (submissionID: string): Promise<ICrawerResult> => {
+const getSubmissionState = async (submissionID: string): Promise<ICrawerResult> => {
     await page.goto(`http://poj.org/showsource?solution_id=${submissionID}`);
     const text: string = await page.evaluate(() => {
         return document.querySelector("tbody").textContent.split("\n").map((x) => x.trim()).filter((x) => x.length).join("");
@@ -51,3 +53,23 @@ export const getSubmissionState = async (submissionID: string): Promise<ICrawerR
         status: splitted[4],
     };
 };
+let watching: any = [];
+export const addTask = (solution: ISolutionModel, sid: string) => {
+    watching.push({ solution, sid });
+};
+
+const updateQueue = async () => {
+    const newQueue: any = [];
+    for (const x of watching) {
+        const crawerResult = await getSubmissionState(x.sid) as ICrawerResult;
+        x.solution.status = crawerResult.status;
+        x.solution.result = crawerResult.result;
+        await updateSolution(x.solution);
+        if (!crawerResult.finished) {
+            newQueue.push(x);
+        }
+    }
+    watching = newQueue;
+    setTimeout(updateQueue, 5000);
+};
+setTimeout(updateQueue, 5000);
