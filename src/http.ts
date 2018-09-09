@@ -28,49 +28,46 @@ export const initialize = async (config: IJudgerConfig) => {
             rolename: "Judgers",
             username: config.username,
         };
-        request.post({ url, form }, (err, httpResponse, responseBody) => {
+        request.post({ url, form }, (err, response) => {
             if (err) {
                 rej(err);
             } else {
-                const parsed = JSON.parse(responseBody);
-                if (parsed.status !== "success") { rej(parsed.payload); }
-                res(parsed.payload);
+                if (response.body.status !== "success") { rej(response.body.payload); }
+                res(response.body.payload);
             }
         });
     });
 };
 
-export const get = async (requestURL: string, queries: any): Promise<string> => {
+export const get = async (requestURL: string, queries: any): Promise<any> => {
     const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
     return await new Promise<string>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
-        request.get({ url, qs }, (err, httpResponse, responseBody) => {
+        request.get({ url, qs }, (err, response) => {
             if (err) {
                 rej(err);
             } else {
-                const parsed = JSON.parse(responseBody);
-                if (parsed.status !== "success") { rej(parsed.payload); }
-                res(parsed.payload);
+                if (response.body.status !== "success") { rej(response.body.payload); }
+                res(response.body.payload);
             }
         });
     });
 };
 
-export const post = async (requestURL: string, queries: any, form: any): Promise<string> => {
+export const post = async (requestURL: string, queries: any, body: any): Promise<any> => {
     const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
     return await new Promise<string>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
-        request.post({ url, qs, form }, (err, httpResponse, responseBody) => {
+        request.post({ url, qs, body, json: true }, (err, response) => {
             if (err) {
                 rej(err);
             } else {
-                const parsed = JSON.parse(responseBody);
-                if (parsed.status !== "success") { rej(parsed.payload); }
-                res(parsed.payload);
+                if (response.body.status !== "success") { rej(response.body.payload); }
+                res(response.body.payload);
             }
         });
     });

@@ -15,10 +15,6 @@ const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: 
         solution.result = { type: "traditional" };
         await updateSolution(solution);
         await traditional(config, solution, problem);
-    } else if (problem.data.type === "remote") {
-        solution.result = { type: "remote" };
-        await updateSolution(solution);
-        await traditional(config, solution, problem);
     }
 };
 
@@ -27,6 +23,8 @@ const startJudge = async (config: IJudgerConfig) => {
     const judgeLoop = async () => {
         const solutionID = (await instance.rpopAsync("judgeTask"));
         if (solutionID) {
+            // tslint:disable-next-line:no-console
+            console.log(`Attached solutionID: ${solutionID}`);
             const solution = await getSolution(solutionID);
             const problem = await getProblem(solution.problemID);
             await choose(config, solution, problem);
