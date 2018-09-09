@@ -22,13 +22,13 @@ export const initialize = async (config: IJudgerConfig) => {
     clientID = generate(50);
     authorization = await new Promise<string>((res, rej) => {
         const url = baseURL + "/login";
-        const form = {
+        const body = {
             clientID,
             password: config.password,
             rolename: "Judgers",
             username: config.username,
         };
-        request.post({ url, form }, (err, response) => {
+        request.post({ url, body, json: true }, (err, response) => {
             if (err) {
                 rej(err);
             } else {
