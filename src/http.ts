@@ -45,7 +45,7 @@ export const get = async (requestURL: string, queries: any): Promise<any> => {
     return await new Promise<string>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
-        request.get({ url, qs }, (err, response) => {
+        request.get({ url, qs, json: true }, (err, response) => {
             if (err) {
                 rej(err);
             } else {

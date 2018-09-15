@@ -37,10 +37,10 @@ const startJudge = async (config: IJudgerConfig) => {
 startJudge({
     cgroup: "test",
     chroot: "/run/media/zhangzisu/Data/RootFS",
-    password: "GkvVpuSzhb",
+    password: "123456",
     server: "http://127.0.0.1:3000",
     user: "root",
-    username: "Judger",
+    username: "Judger2",
 });
 
 // startJudge({
