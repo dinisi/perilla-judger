@@ -27,12 +27,12 @@ const setFileMeta = (fileID: string, meta: IBFileModel) => {
 
 const outdatedFile = async (fileID: string) => {
     if (!existsFile(fileID)) {
-        const remote = JSON.parse(await get(`/api/file/${fileID}/meta`, {})) as IBFileModel;
+        const remote = await get(`/api/file/${fileID}/meta`, {}) as IBFileModel;
         setFileMeta(fileID, remote);
         return true;
     } else {
         const local = getFileMeta(fileID);
-        const remote = JSON.parse(await get(`/api/file/${fileID}/meta`, {})) as IBFileModel;
+        const remote = await get(`/api/file/${fileID}/meta`, {}) as IBFileModel;
         const result = local.hash !== remote.hash;
         setFileMeta(fileID, remote);
         return result;
