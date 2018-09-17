@@ -34,20 +34,20 @@ const startJudge = async (config: IJudgerConfig) => {
     judgeLoop();
 };
 
-startJudge({
-    cgroup: "test",
-    chroot: "/run/media/zhangzisu/Data/RootFS",
-    password: "123456",
-    server: "http://127.0.0.1:3000",
-    user: "root",
-    username: "Judger2",
-});
-
 // startJudge({
 //     cgroup: "test",
-//     chroot: "/home/zhangzisu/RootFS",
-//     password: "37SYojsZ3z",
+//     chroot: "/run/media/zhangzisu/Data/RootFS",
+//     password: "123456",
 //     server: "http://127.0.0.1:3000",
 //     user: "root",
-//     username: "Judger",
+//     username: "Judger2",
 // });
+
+startJudge({
+    cgroup: "test",
+    chroot: "/home/zhangzisu/RootFS",
+    password: "sqjc4NcWh1",
+    server: "http://127.0.0.1:3000",
+    user: "root",
+    username: "Judger",
+});
