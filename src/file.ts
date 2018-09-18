@@ -27,12 +27,12 @@ const setFileMeta = (fileID: string, meta: IBFileModel) => {
 
 const outdatedFile = async (fileID: string) => {
     if (!existsFile(fileID)) {
-        const remote = await get(`/api/file/${fileID}/meta`, {}) as IBFileModel;
+        const remote = await get(`/api/file/${fileID}`, {}) as IBFileModel;
         setFileMeta(fileID, remote);
         return true;
     } else {
         const local = getFileMeta(fileID);
-        const remote = await get(`/api/file/${fileID}/meta`, {}) as IBFileModel;
+        const remote = await get(`/api/file/${fileID}`, {}) as IBFileModel;
         const result = local.hash !== remote.hash;
         setFileMeta(fileID, remote);
         return result;
@@ -40,7 +40,7 @@ const outdatedFile = async (fileID: string) => {
 };
 
 const downloadFile = async (fileID: string) => {
-    await download(`/api/file/${fileID}`, {}, getFilePath(fileID));
+    await download(`/api/file/${fileID}/raw`, {}, getFilePath(fileID));
 };
 
 export const getFile = async (fileID: string) => {
