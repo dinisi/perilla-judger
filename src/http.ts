@@ -25,7 +25,6 @@ export const initialize = async (config: IJudgerConfig) => {
         const body = {
             clientID,
             password: config.password,
-            rolename: "Judgers",
             username: config.username,
         };
         request.post({ url, body, json: true }, (err, response) => {

@@ -46,7 +46,7 @@ const startJudge = async (config: IJudgerConfig) => {
 startJudge({
     cgroup: "test",
     chroot: "/home/zhangzisu/RootFS",
-    password: "sqjc4NcWh1",
+    password: "RXcZsxDwEW",
     server: "http://127.0.0.1:3000",
     user: "root",
     username: "Judger",
