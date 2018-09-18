@@ -270,17 +270,18 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                 if (solution.result.subtasks[name].memory) {
                     solution.result.memory += solution.result.subtasks[name].memory;
                 }
-                if (solution.status === "Judging" && solution.result.subtasks[name].result !== "Accepted") {
-                    solution.status = solution.result.subtasks[name].result;
+                if (solution.status === "Judging" && solution.result.subtasks[name].status !== "Accepted") {
+                    solution.status = solution.result.subtasks[name].status;
                 }
             }
         }
         if (solution.status === "Judging") {
-            solution.result.subtasks[name].result = "Accepted";
+            solution.status = "Accepted";
         }
         await updateSolution(solution);
     } catch (e) {
         solution.status = "Failed";
+        solution.result.extra = e.message;
         await updateSolution(solution);
     }
 };
