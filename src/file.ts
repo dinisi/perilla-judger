@@ -26,16 +26,21 @@ const setFileMeta = (fileID: string, meta: IBFileModel) => {
 };
 
 const outdatedFile = async (fileID: string) => {
-    if (!existsFile(fileID)) {
-        const remote = await get(`/api/file/${fileID}`, {}) as IBFileModel;
-        setFileMeta(fileID, remote);
-        return true;
-    } else {
-        const local = getFileMeta(fileID);
-        const remote = await get(`/api/file/${fileID}`, {}) as IBFileModel;
-        const result = local.hash !== remote.hash;
-        setFileMeta(fileID, remote);
-        return result;
+    try {
+        if (!existsFile(fileID)) {
+            const remote = await get(`/api/file/${fileID}`, {}) as IBFileModel;
+            if (!remote || (typeof remote !== "string")) { throw new Error(); }
+            setFileMeta(fileID, remote);
+            return true;
+        } else {
+            const local = getFileMeta(fileID);
+            const remote = await get(`/api/file/${fileID}`, {}) as IBFileModel;
+            const result = local.hash !== remote.hash;
+            setFileMeta(fileID, remote);
+            return result;
+        }
+    } catch (e) {
+        throw new Error("Network-File error");
     }
 };
 
@@ -44,8 +49,12 @@ const downloadFile = async (fileID: string) => {
 };
 
 export const getFile = async (fileID: string) => {
-    if (await outdatedFile(fileID)) {
-        await downloadFile(fileID);
+    try {
+        if (await outdatedFile(fileID)) {
+            await downloadFile(fileID);
+        }
+        return getFilePath(fileID);
+    } catch (e) {
+        throw new Error("Network-File error");
     }
-    return getFilePath(fileID);
 };

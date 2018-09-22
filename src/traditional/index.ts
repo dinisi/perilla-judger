@@ -8,17 +8,19 @@ import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel } from "../
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
 import { updateSolution } from "../solution";
-import { ISubtask, ITestcaseResult, ITraditionProblemDataConfig, ITraditionProblemResult } from "./interfaces";
+import { IDataConfig, IResult, ISubtask, ITestcaseResult } from "./interfaces";
 
-const solutionDir = resolve("files/tmp/judge/solution/");
-const judgerDir = resolve("files/tmp/judge/judger/");
+const solutionDir = resolve("files/tmp/judge/traditional/solution/");
+const judgerDir = resolve("files/tmp/judge/traditional/judger/");
 
 export const traditional = async (config: IJudgerConfig, solution: ISolutionModel, problem: IProblemModel) => {
     try {
-        const sourceFile = solution.files[0];
-        const data = problem.data as ITraditionProblemDataConfig;
         solution.status = "Initialized";
         solution.result.score = 0;
+        solution.result.log = `Initialized at ${new Date()}\n`;
+        if (solution.files.length !== 1) { throw new Error("Invalid submission"); }
+        const sourceFile = solution.files[0];
+        const data = problem.data as IDataConfig;
         await updateSolution(solution);
 
         ensureDirSync(solutionDir);
@@ -26,6 +28,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         ensureDirSync(judgerDir);
         emptyDirSync(judgerDir);
 
+        solution.result.log += "Compiling judger\n";
         const judgerCompileResult = await compile(config, data.judgerFile);
         solution.result.judgerCompileResult = judgerCompileResult.output;
         if (!judgerCompileResult.success) {
@@ -37,6 +40,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
         copySync(judgerCompileResult.execFile, judgerExecFile);
 
+        solution.result.log += "Compiling solution\n";
         const solutionCompileResult = await compile(config, sourceFile);
         solution.result.compileResult = solutionCompileResult.output;
         if (!solutionCompileResult.success) {
@@ -143,7 +147,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                 copyFileSync(input, join(runDir, "input"));
                 copyFileSync(output, join(runDir, "output"));
                 copyFileSync(await getFile(sourceFile), join(runDir, "source"));
-                copyFileSync(judgerExecFile, join(runDir, solutionLanguageInfo.compiledFilename));
+                copyFileSync(judgerExecFile, join(runDir, judgerLanguageInfo.compiledFilename));
                 const judgerRunParameter: SandboxParameter = {
                     cgroup: config.cgroup,
                     chroot: config.chroot,
@@ -224,7 +228,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             try {
                 if (subtasks[name].resolved) {
                     solution.status = "Data Error";
-                    (solution.result as ITraditionProblemResult).log = "Cyclic dependence detected";
+                    (solution.result as IResult).log = "Cyclic dependence detected";
                     await updateSolution(solution);
                     return;
                 }
@@ -254,6 +258,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         solution.status = "Judging";
         await updateSolution(solution);
 
+        solution.result.log += "Resolving subtasks\n";
         for (const name in subtasks) {
             if (subtasks[name].judged) { continue; }
             await resolveSubtask(name);
@@ -278,10 +283,11 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         if (solution.status === "Judging") {
             solution.status = "Accepted";
         }
+        solution.result.log += `Done at ${new Date()}`;
         await updateSolution(solution);
     } catch (e) {
         solution.status = "Failed";
-        solution.result.extra = e.message;
+        solution.result.log += e.message;
         await updateSolution(solution);
     }
 };

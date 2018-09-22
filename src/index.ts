@@ -1,5 +1,6 @@
 import { promisifyAll } from "bluebird";
 import * as redis from "redis";
+import { direct } from "./direct";
 import { initialize } from "./http";
 import { IJudgerConfig, IProblemModel, ISolutionModel } from "./interfaces";
 import { getProblem } from "./problem";
@@ -13,8 +14,10 @@ const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: 
     solution.status = "Processing";
     if (problem.data.type === "traditional") {
         solution.result = { type: "traditional" };
-        await updateSolution(solution);
         await traditional(config, solution, problem);
+    } else if (problem.data.type === "direct") {
+        solution.result = { type: "direct" };
+        await direct(config, solution, problem);
     }
 };
 

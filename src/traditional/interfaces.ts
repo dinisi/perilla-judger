@@ -13,7 +13,7 @@ export interface ISubtask {
     memoryLimit: number;
 }
 
-export interface ITraditionProblemDataConfig {
+export interface IDataConfig {
     subtasks: ISubtask[];
     judgerFile: string;
 }
@@ -39,8 +39,8 @@ export interface ISubtaskResult {
     memory?: number;
 }
 
-export interface ITraditionProblemResult {
-    subtasks?: any;
+export interface IResult {
+    subtasks?: ISubtaskResult[];
     score: number;
     time?: number;
     memory?: number;

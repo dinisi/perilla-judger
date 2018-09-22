@@ -41,7 +41,7 @@ export const initialize = async (config: IJudgerConfig) => {
 export const get = async (requestURL: string, queries: any): Promise<any> => {
     const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
-    return await new Promise<string>((res, rej) => {
+    return new Promise<any>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
         request.get({ url, qs, json: true }, (err, response) => {
@@ -58,7 +58,7 @@ export const get = async (requestURL: string, queries: any): Promise<any> => {
 export const post = async (requestURL: string, queries: any, body: any): Promise<any> => {
     const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
-    return await new Promise<string>((res, rej) => {
+    return new Promise<any>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
         request.post({ url, qs, body, json: true }, (err, response) => {
@@ -75,7 +75,7 @@ export const post = async (requestURL: string, queries: any, body: any): Promise
 export const download = async (requestURL: string, queries: any, path: string) => {
     const q = { v: getVerificationCode(authorization, clientID), a: authorization };
     Object.assign(q, queries);
-    return await new Promise((res, rej) => {
+    return new Promise<void>((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
         const headers = { authorization };
