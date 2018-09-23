@@ -1,5 +1,5 @@
 import { copyFileSync, copySync, emptyDirSync, ensureDirSync } from "fs-extra";
-import { join, resolve } from "path";
+import { join, parse, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter } from "simple-sandbox/lib/interfaces";
 import { compile } from "../compile";
@@ -33,7 +33,9 @@ export const direct = async (config: IJudgerConfig, solution: ISolutionModel, pr
             await updateSolution(solution);
             return;
         }
-        const judgerLanguageInfo = getLanguageInfo(getFileMeta(data.judgerFile).type) as ILanguageInfo;
+        const ext = parse(getFileMeta(data.judgerFile).filename).ext;
+        if (!ext) { throw new Error("Invalid judger file"); }
+        const judgerLanguageInfo = getLanguageInfo(ext.substr(1, ext.length - 1)) as ILanguageInfo;
         const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
         copySync(judgerCompileResult.execFile, judgerExecFile);
 

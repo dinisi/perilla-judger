@@ -7,6 +7,12 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch Test",
+            "program": "${workspaceFolder}/test/dist/poj.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}/dist/index.js",
             "preLaunchTask": "tsc: build - tsconfig.json",

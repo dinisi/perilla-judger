@@ -6,6 +6,7 @@ import { IJudgerConfig, IProblemModel, ISolutionModel } from "./interfaces";
 import { getProblem } from "./problem";
 import { getSolution, updateSolution } from "./solution";
 import { traditional } from "./traditional";
+import { virtual } from "./virtual";
 
 promisifyAll(redis);
 const instance: any = redis.createClient();
@@ -18,6 +19,9 @@ const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: 
     } else if (problem.data.type === "direct") {
         solution.result = { type: "direct" };
         await direct(config, solution, problem);
+    } else if (problem.data.type === "virtual") {
+        solution.result = { type: "virtual" };
+        await virtual(config, solution, problem);
     }
 };
 

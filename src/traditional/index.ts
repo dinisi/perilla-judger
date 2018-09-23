@@ -1,5 +1,5 @@
 import { copyFileSync, copySync, emptyDirSync, ensureDirSync, existsSync } from "fs-extra";
-import { join, resolve } from "path";
+import { join, parse, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
 import { compile } from "../compile";
@@ -36,7 +36,9 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             await updateSolution(solution);
             return;
         }
-        const judgerLanguageInfo = getLanguageInfo(getFileMeta(data.judgerFile).type) as ILanguageInfo;
+        const judgerExt = parse(getFileMeta(data.judgerFile).filename).ext;
+        if (!judgerExt) { throw new Error("Invalid judger file"); }
+        const judgerLanguageInfo = getLanguageInfo(judgerExt.substr(1, judgerExt.length - 1)) as ILanguageInfo;
         const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
         copySync(judgerCompileResult.execFile, judgerExecFile);
 
@@ -48,7 +50,9 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
             await updateSolution(solution);
             return;
         }
-        const solutionLanguageInfo = getLanguageInfo(getFileMeta(sourceFile).type) as ILanguageInfo;
+        const solutionExt = parse(getFileMeta(sourceFile).filename).ext;
+        if (!solutionExt) { throw new Error("Invalid solution file"); }
+        const solutionLanguageInfo = getLanguageInfo(solutionExt.substr(1, solutionExt.length - 1)) as ILanguageInfo;
         const solutionExecFile = join(solutionDir, solutionLanguageInfo.compiledFilename);
         copySync(solutionCompileResult.execFile, solutionExecFile);
 

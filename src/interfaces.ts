@@ -1,10 +1,13 @@
 export interface IBFileModel {
     _id: string;
-    hash: string;
     owner: string;
+    filename: string;
     description: string;
-    type: string;
-    created?: Date;
+    hash: string;
+    size: number;
+    allowedRead: string[];
+    allowedModify: string[];
+    created: Date;
 }
 
 export interface ISolutionModel {
