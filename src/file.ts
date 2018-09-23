@@ -29,7 +29,7 @@ const outdatedFile = async (fileID: string) => {
     try {
         if (!existsFile(fileID)) {
             const remote = await get(`/api/file/${fileID}`, {}) as IBFileModel;
-            if (!remote || (typeof remote !== "string")) { throw new Error(); }
+            if (!remote || (typeof remote !== "object")) { throw new Error(); }
             setFileMeta(fileID, remote);
             return true;
         } else {

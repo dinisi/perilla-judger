@@ -1,5 +1,5 @@
 import { copyFileSync, emptyDirSync, ensureDirSync, existsSync, pathExists, readFileSync } from "fs-extra";
-import { join, resolve } from "path";
+import { join, parse, resolve } from "path";
 import * as sandbox from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
 import { getFile, getFileMeta } from "./file";
@@ -16,7 +16,10 @@ export const compile = async (config: IJudgerConfig, fileID: string): Promise<IC
         const meta = getFileMeta(fileID);
         ensureDirSync(compileDir);
         emptyDirSync(compileDir);
-        const info = getLanguageInfo(meta.type) as ILanguageInfo;
+        let ext = parse(meta.filename).ext;
+        if (!ext) { throw new Error("Invalid compile request"); }
+        ext = ext.substr(1, ext.length - 1);
+        const info = getLanguageInfo(ext) as ILanguageInfo;
 
         if (info.requireCompile) {
             copyFileSync(source, join(compileDir, info.sourceFilename));

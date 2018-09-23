@@ -6,7 +6,7 @@ import { IJudgerConfig, IProblemModel, ISolutionModel } from "./interfaces";
 import { getProblem } from "./problem";
 import { getSolution, updateSolution } from "./solution";
 import { traditional } from "./traditional";
-import { virtual } from "./virtual";
+import { initalize, virtual } from "./virtual";
 
 promisifyAll(redis);
 const instance: any = redis.createClient();
@@ -27,6 +27,7 @@ const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: 
 
 const startJudge = async (config: IJudgerConfig) => {
     await initialize(config);
+    await initalize(config);
     const judgeLoop = async () => {
         const solutionID = (await instance.rpopAsync("judgeTask"));
         if (solutionID) {
@@ -41,20 +42,20 @@ const startJudge = async (config: IJudgerConfig) => {
     judgeLoop();
 };
 
-// startJudge({
-//     cgroup: "test",
-//     chroot: "/run/media/zhangzisu/Data/RootFS",
-//     password: "123456",
-//     server: "http://127.0.0.1:3000",
-//     user: "root",
-//     username: "Judger2",
-// });
-
 startJudge({
     cgroup: "test",
-    chroot: "/home/zhangzisu/RootFS",
-    password: "RXcZsxDwEW",
+    chroot: "/run/media/zhangzisu/Data/RootFS",
+    password: "Z98Hw6O3qB",
     server: "http://127.0.0.1:3000",
     user: "root",
     username: "Judger",
 });
+
+// startJudge({
+//     cgroup: "test",
+//     chroot: "/home/zhangzisu/RootFS",
+//     password: "RXcZsxDwEW",
+//     server: "http://127.0.0.1:3000",
+//     user: "root",
+//     username: "Judger",
+// });
