@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Test",
-            "program": "${workspaceFolder}/test/dist/poj.js"
+            "program": "${workspaceFolder}/test/dist/index.js"
         },
         {
             "type": "node",

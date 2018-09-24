@@ -2,64 +2,56 @@ import { JSDOM } from "jsdom";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
 import { Robot } from "./base";
 
-export class POJRobot extends Robot {
+export class LYDSYRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
-    private continuesStatus = ["Queuing", "Compiling", "Running"];
+    private continuesStatus = ["Pending", "Pending_Rejudging", "Compiling", "Running_&_Judging"];
     public constructor(username: string, password: string) {
         super(username, password);
     }
     public async isLoggedIn() {
-        const result = await this.agent.get("http://poj.org/mail");
-        return result.status === 200;
+        const result = await this.agent.get("https://www.lydsy.com/JudgeOnline/modifypage.php");
+        return result.status === 200 && /Update Information/.test(result.text);
     }
     public async initalize() {
         this.agent = agent();
         const result = await this.agent
-            .post("http://poj.org/login")
-            .send({ user_id1: this.username, password1: this.password, B1: "login", url: "/" })
+            .post("https://www.lydsy.com/JudgeOnline/login.php")
+            .send({ user_id: this.username, password: this.password, submit: "Submit" })
             .set("Content-Type", "application/x-www-form-urlencoded")
-            .set("Referer", "http://poj.org/")
+            .set("Referer", "https://www.lydsy.com/JudgeOnline/loginpage.php")
             .redirects(2);
         if (!await this.isLoggedIn()) { throw new Error("Login failed"); }
     }
     public async submit(problemID: string, code: string, language: string) {
         let langcode = null;
         switch (language) {
-            case "c":
-                langcode = 1;
-                break;
-            case "cpp":
-                langcode = 0;
-                break;
-            case "java":
-                langcode = 2;
-                break;
+            case "c": langcode = 0; break;
+            case "cpp": langcode = 1; break;
+            case "pas": langcode = 2; break;
+            case "java": langcode = 3; break;
+            case "py": langcode = 6; break;
         }
         if (langcode === null) { throw new Error("Language Rejected"); }
         const result = await this.agent
-            .post("http://poj.org/submit")
-            .send({ problem_id: problemID, language: langcode, source: code, submit: "Submit", encoded: 0 })
-            .set("Referer", "http://poj.org/submit?problem_id=" + problemID)
+            .post("https://www.lydsy.com/JudgeOnline/submit.php")
+            .send({ id: problemID, language: langcode, source: code })
             .set("Content-Type", "application/x-www-form-urlencoded")
+            .set("Referer", `https://www.lydsy.com/JudgeOnline/submitpage.php?id=${problemID}`)
             .redirects(2);
         const dom = new JSDOM(result.text);
-        const resultTable = dom.window.document.querySelector('table[cellspacing="0"][cellpadding="0"][width="100%"][border="1"][class="a"][bordercolor="#FFFFFF"]');
+        const resultTable = dom.window.document.querySelector('table[align="center"]');
         const resultRows = resultTable.querySelectorAll('tr[align="center"]');
         for (const resultRow of resultRows) {
-            const runUser = resultRow.childNodes[1].textContent;
-            if (runUser !== this.username) { continue; }
-            const runID = resultRow.childNodes[0].textContent;
-            return runID;
+            if (resultRow.childNodes[1].textContent !== this.username) { continue; }
+            return resultRow.childNodes[0].textContent;
         }
         throw new Error("Submit failed");
     }
     public async fetch(originID: string) {
-        const parsed = parseInt(originID, 10);
-        const top = parsed + 1;
-        const url = `http://poj.org/status?top=${top}`;
+        const url = `https://www.lydsy.com/JudgeOnline/status.php?&top=${originID}`;
         const result = await this.agent.get(url);
         const dom = new JSDOM(result.text);
-        const resultTable = dom.window.document.querySelector('table[cellspacing="0"][cellpadding="0"][width="100%"][border="1"][class="a"][bordercolor="#FFFFFF"]');
+        const resultTable = dom.window.document.querySelector('table[align="center"]');
         const resultRow = resultTable.querySelector('tr[align="center"]');
         const status = resultRow.childNodes[3].textContent;
         return {
