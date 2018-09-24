@@ -6,10 +6,12 @@ import { updateSolution } from "../solution";
 import { Robot } from "./robots/base";
 import { LYDSYRobot } from "./robots/lydsy";
 import { POJRobot } from "./robots/poj";
+import { UOJRobot } from "./robots/uoj";
 
 const robots: Robot[] = [
     new POJRobot("zhangzisu_develop", "123456"),
     new LYDSYRobot("zzsdev", "123456"),
+    new UOJRobot("zhangzisu_develop", "123456"),
 ];
 
 export const initalize = async (config: IJudgerConfig) => {
@@ -48,6 +50,9 @@ export const virtual = async (config: IJudgerConfig, solution: ISolutionModel, p
                 break;
             case "LYDSY":
                 ojIndex = 1;
+                break;
+            case "UOJ":
+                ojIndex = 2;
                 break;
         }
         if (ojIndex === null) { throw new Error("Invalid Origin OnlineJudge"); }

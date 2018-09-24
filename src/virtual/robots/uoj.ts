@@ -22,7 +22,7 @@ export class UOJRobot extends Robot {
         }
     }
     public async initalize() {
-        this.browser = await launch({ headless: false });
+        this.browser = await launch();
         const page = await this.browser.newPage();
         try {
             await page.goto("http://uoj.ac/login");
