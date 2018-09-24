@@ -1,7 +1,8 @@
 import { LYDSYRobot } from "./lydsy";
+import { UOJRobot } from "./uoj";
 
 (async () => {
-    const robot = new LYDSYRobot("zzsdev", "123456");
+    const robot = new UOJRobot("zhangzisu_develop", "78d58440fec80641ab0a63e1d4a27337");
     await robot.initalize();
     const runID = await robot.submit("1000",
     `
