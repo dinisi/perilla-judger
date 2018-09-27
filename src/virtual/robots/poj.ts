@@ -4,7 +4,7 @@ import { Robot } from "./base";
 
 export class POJRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
-    private continuesStatus = ["Queuing", "Compiling", "Running"];
+    private continuesStatus = ["Queuing", "Compiling", "Running", "Waiting"];
     public constructor(username: string, password: string) {
         super(username, password);
     }
@@ -21,6 +21,8 @@ export class POJRobot extends Robot {
             .set("Referer", "http://poj.org/")
             .redirects(2);
         if (!await this.isLoggedIn()) { throw new Error("Login failed"); }
+        // tslint:disable-next-line:no-console
+        console.log("[INFO] [Robots] POJ Robot is initialized");
     }
     public async submit(problemID: string, code: string, language: string) {
         let langcode = null;

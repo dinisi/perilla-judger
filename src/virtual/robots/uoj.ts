@@ -22,7 +22,7 @@ export class UOJRobot extends Robot {
         }
     }
     public async initialize() {
-        this.browser = await launch();
+        this.browser = await launch({ args: ["--no-sandbox"] });
         const page = await this.browser.newPage();
         try {
             await page.goto("http://uoj.ac/login");
@@ -33,6 +33,8 @@ export class UOJRobot extends Robot {
             }, this.username, this.password);
             await page.waitForNavigation();
             await page.close();
+            // tslint:disable-next-line:no-console
+            console.log("[INFO] [Robots] UOJ Robot is initialized");
         } catch (e) {
             await page.close();
             throw e;

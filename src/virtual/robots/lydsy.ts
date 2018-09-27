@@ -4,7 +4,7 @@ import { Robot } from "./base";
 
 export class LYDSYRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
-    private continuesStatus = ["Pending", "Pending_Rejudging", "Compiling", "Running_&_Judging"];
+    private continuesStatus = ["Pending", "Pending_Rejudging", "Compiling", "Running_&_Judging", "Waiting"];
     public constructor(username: string, password: string) {
         super(username, password);
     }
@@ -21,6 +21,8 @@ export class LYDSYRobot extends Robot {
             .set("Referer", "https://www.lydsy.com/JudgeOnline/loginpage.php")
             .redirects(2);
         if (!await this.isLoggedIn()) { throw new Error("Login failed"); }
+        // tslint:disable-next-line:no-console
+        console.log("[INFO] [Robots] LYDSY Robot is initialized");
     }
     public async submit(problemID: string, code: string, language: string) {
         let langcode = null;
