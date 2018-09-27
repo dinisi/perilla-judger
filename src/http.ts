@@ -20,22 +20,28 @@ let baseURL: string;
 export const initialize = async (config: IJudgerConfig) => {
     baseURL = config.server;
     clientID = generate(50);
-    authorization = await new Promise<string>((res, rej) => {
-        const url = baseURL + "/login";
-        const body = {
-            clientID,
-            password: config.password,
-            username: config.username,
-        };
-        request.post({ url, body, json: true }, (err, response) => {
-            if (err) {
-                rej(err);
-            } else {
-                if (response.body.status !== "success") { rej(response.body.payload); }
-                res(response.body.payload);
-            }
+    try {
+        authorization = await new Promise<string>((res, rej) => {
+            const url = baseURL + "/login";
+            const body = {
+                clientID,
+                password: config.password,
+                username: config.username,
+            };
+            request.post({ url, body, json: true }, (err, response) => {
+                if (err) {
+                    rej(err);
+                } else {
+                    if (response.body.status !== "success") { rej(response.body.payload); }
+                    res(response.body.payload);
+                }
+            });
         });
-    });
+    } catch (e) {
+        // tslint:disable-next-line:no-console
+        console.log("Login failed");
+        process.exit(0);
+    }
 };
 
 export const get = async (requestURL: string, queries: any): Promise<any> => {

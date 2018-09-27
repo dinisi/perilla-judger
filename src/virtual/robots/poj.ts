@@ -12,7 +12,7 @@ export class POJRobot extends Robot {
         const result = await this.agent.get("http://poj.org/mail");
         return result.status === 200;
     }
-    public async initalize() {
+    public async initialize() {
         this.agent = agent();
         const result = await this.agent
             .post("http://poj.org/login")

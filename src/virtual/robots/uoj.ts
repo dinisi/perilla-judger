@@ -21,7 +21,7 @@ export class UOJRobot extends Robot {
             throw e;
         }
     }
-    public async initalize() {
+    public async initialize() {
         this.browser = await launch();
         const page = await this.browser.newPage();
         try {

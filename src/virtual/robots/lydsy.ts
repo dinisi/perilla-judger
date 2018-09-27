@@ -12,7 +12,7 @@ export class LYDSYRobot extends Robot {
         const result = await this.agent.get("https://www.lydsy.com/JudgeOnline/modifypage.php");
         return result.status === 200 && /Update Information/.test(result.text);
     }
-    public async initalize() {
+    public async initialize() {
         this.agent = agent();
         const result = await this.agent
             .post("https://www.lydsy.com/JudgeOnline/login.php")

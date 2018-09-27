@@ -14,9 +14,9 @@ const robots: Robot[] = [
     new UOJRobot("zhangzisu_develop", "123456"),
 ];
 
-export const initalize = async (config: IJudgerConfig) => {
+export const initialize = async (config: IJudgerConfig) => {
     for (const robot of robots) {
-        await robot.initalize();
+        await robot.initialize();
     }
 };
 
