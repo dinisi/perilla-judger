@@ -18,6 +18,8 @@ let clientID: string;
 let baseURL: string;
 
 export const initialize = async (config: IJudgerConfig) => {
+    // tslint:disable-next-line:no-console
+    console.log("[INFO] [HTTP] HTTP Helper is initializing");
     baseURL = config.server;
     clientID = generate(50);
     try {
@@ -37,6 +39,8 @@ export const initialize = async (config: IJudgerConfig) => {
                 }
             });
         });
+        // tslint:disable-next-line:no-console
+        console.log("[INFO] [HTTP] HTTP Helper is initialized");
     } catch (e) {
         // tslint:disable-next-line:no-console
         console.log("Login failed");
