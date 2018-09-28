@@ -48,7 +48,7 @@ export const compile = async (config: IJudgerConfig, fileID: string): Promise<IC
             };
             const compileProcess = await sandbox.startSandbox(compileParameter);
             const compileResult = await compileProcess.waitForStop();
-            const compileOutput = `stdout:\n${shortRead(join(compileDir, "stdout"))}\nstderr:\n${shortRead(join(compileDir, "stderr"))}\n`;
+            const compileOutput = `${shortRead(join(compileDir, "stdout"))}${shortRead(join(compileDir, "stderr"))}`;
             const result: ICompileResult = {
                 execFile: join(compileDir, info.compiledFilename),
                 output: compileOutput,
