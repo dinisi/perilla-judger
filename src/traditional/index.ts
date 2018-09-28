@@ -140,14 +140,14 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                 // 初始化评分环境
                 // 评分程序目录结构：
                 // /root/execFile
-                //      /stdout: 用户输出流
-                //      /stderr: 用户错误流
+                //      /userout: 用户输出流
+                //      /usererr: 用户错误流
                 //      /input : 标准输入
                 //      /output: 标准输出
                 //      /source: 用户程序
                 emptyDirSync(runDir);
-                copyFileSync(stdout, join(runDir, "stdout"));
-                copyFileSync(stderr, join(runDir, "stderr"));
+                copyFileSync(stdout, join(runDir, "userout"));
+                copyFileSync(stderr, join(runDir, "usererr"));
                 copyFileSync(input, join(runDir, "input"));
                 copyFileSync(output, join(runDir, "output"));
                 copyFileSync(await getFile(sourceFile), join(runDir, "source"));
