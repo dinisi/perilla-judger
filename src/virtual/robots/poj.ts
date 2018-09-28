@@ -13,6 +13,8 @@ export class POJRobot extends Robot {
         return result.status === 200;
     }
     public async initialize() {
+        // tslint:disable-next-line:no-console
+        console.log("[INFO] [Robots] POJ Robot is initializing");
         this.agent = agent();
         const result = await this.agent
             .post("http://poj.org/login")

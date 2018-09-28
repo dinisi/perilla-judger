@@ -13,6 +13,8 @@ export class LYDSYRobot extends Robot {
         return result.status === 200 && /Update Information/.test(result.text);
     }
     public async initialize() {
+        // tslint:disable-next-line:no-console
+        console.log("[INFO] [Robots] LYDSY Robot is initializing");
         this.agent = agent();
         const result = await this.agent
             .post("https://www.lydsy.com/JudgeOnline/login.php")

@@ -22,6 +22,8 @@ export class UOJRobot extends Robot {
         }
     }
     public async initialize() {
+        // tslint:disable-next-line:no-console
+        console.log("[INFO] [Robots] UOJ Robot is initializing");
         this.browser = await launch({ args: ["--no-sandbox"] });
         const page = await this.browser.newPage();
         try {
