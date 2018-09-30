@@ -20,6 +20,7 @@ export interface ISolutionModel {
 }
 
 export interface IProblemModel {
+    files: string[];
     data: any;
     meta?: any;
 }

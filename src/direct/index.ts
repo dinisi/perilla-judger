@@ -26,14 +26,15 @@ export const direct = async (config: IJudgerConfig, solution: ISolutionModel, pr
         const data = problem.data as IDataConfig;
 
         solution.result.log += "Compiling judger\n";
-        const judgerCompileResult = await compile(config, data.judgerFile);
+        if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
+        const judgerCompileResult = await compile(config, problem.files[data.judgerFile]);
         solution.result.judgerCompileResult = judgerCompileResult.output;
         if (!judgerCompileResult.success) {
             solution.status = "Judger CE";
             await updateSolution(solution);
             return;
         }
-        const ext = parse(getFileMeta(data.judgerFile).filename).ext;
+        const ext = parse(getFileMeta(problem.files[data.judgerFile]).filename).ext;
         if (!ext) { throw new Error("Invalid judger file"); }
         const judgerLanguageInfo = getLanguageInfo(ext.substr(1, ext.length - 1)) as ILanguageInfo;
         const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
@@ -45,7 +46,8 @@ export const direct = async (config: IJudgerConfig, solution: ISolutionModel, pr
         for (const testcase of data.testcases) {
             if (!solution.files[testcase.fileIndex]) { throw new Error("Invalid solution"); }
             const user = await getFile(solution.files[testcase.fileIndex]);
-            const extra = await getFile(testcase.extraFile);
+            if (!problem.files[testcase.extraFile]) throw new Error("Invalid data config");
+            const extra = await getFile(problem.files[testcase.extraFile]);
             const runDir = resolve("files/tmp/run/run");
             ensureDirSync(runDir);
             emptyDirSync(runDir);

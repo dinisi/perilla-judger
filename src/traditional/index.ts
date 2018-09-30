@@ -29,14 +29,15 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         emptyDirSync(judgerDir);
 
         solution.result.log += "Compiling judger\n";
-        const judgerCompileResult = await compile(config, data.judgerFile);
+        if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
+        const judgerCompileResult = await compile(config, problem.files[data.judgerFile]);
         solution.result.judgerCompileResult = judgerCompileResult.output;
         if (!judgerCompileResult.success) {
             solution.status = "Judger CE";
             await updateSolution(solution);
             return;
         }
-        const judgerExt = parse(getFileMeta(data.judgerFile).filename).ext;
+        const judgerExt = parse(getFileMeta(problem.files[data.judgerFile]).filename).ext;
         if (!judgerExt) { throw new Error("Invalid judger file"); }
         const judgerLanguageInfo = getLanguageInfo(judgerExt.substr(1, judgerExt.length - 1)) as ILanguageInfo;
         const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
@@ -64,11 +65,12 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
         }
 
         // JudgeTest
-        const judgeTest = async (input: string, output: string, timeLimit: number, memoryLimit: number): Promise<ITestcaseResult> => {
+        const judgeTest = async (inputID: number, outputID: number, timeLimit: number, memoryLimit: number): Promise<ITestcaseResult> => {
             try {
+                if (!problem.files[inputID] || !problem.files[outputID]) throw new Error("Invalid data config");
                 // 获取文件
-                input = await getFile(input);
-                output = await getFile(output);
+                const input = await getFile(problem.files[inputID]);
+                const output = await getFile(problem.files[outputID]);
 
                 // 初始化临时文件夹
                 const runDir = resolve("files/tmp/run/run");

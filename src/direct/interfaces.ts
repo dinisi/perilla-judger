@@ -1,11 +1,11 @@
 export interface ITestcase {
     fileIndex: number;
-    extraFile: string;
+    extraFile: number;
 }
 
 export interface IDataConfig {
     testcases: ITestcase[];
-    judgerFile: string;
+    judgerFile: number;
 }
 
 export interface ITestcaseResult {

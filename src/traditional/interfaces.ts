@@ -1,6 +1,6 @@
 export interface ITestcase {
-    input: string;
-    output: string;
+    input: number;
+    output: number;
 }
 
 export interface ISubtask {
@@ -15,7 +15,7 @@ export interface ISubtask {
 
 export interface IDataConfig {
     subtasks: ISubtask[];
-    judgerFile: string;
+    judgerFile: number;
 }
 
 export interface ITestcaseResult {
