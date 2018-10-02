@@ -57,7 +57,7 @@ export const direct = async (config: IJudgerConfig, solution: ISolutionModel, pr
             const judgerRunParameter: SandboxParameter = {
                 cgroup: config.cgroup,
                 chroot: config.chroot,
-                environments: ["PATH=/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
+                environments: ["PATH=/usr/lib/jvm/java-1.8-openjdk/bin:/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
                 executable: judgerLanguageInfo.execPath,
                 memory: 512 * 1024 * 1024,
                 mountProc: true,

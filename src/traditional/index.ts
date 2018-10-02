@@ -91,7 +91,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                 const solutionRunParameter: SandboxParameter = {
                     cgroup: config.cgroup,
                     chroot: config.chroot,
-                    environments: ["PATH=/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
+                    environments: ["PATH=/usr/lib/jvm/java-1.8-openjdk/bin:/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
                     executable: solutionLanguageInfo.execPath,
                     memory: memoryLimit,
                     mountProc: true,
@@ -157,7 +157,7 @@ export const traditional = async (config: IJudgerConfig, solution: ISolutionMode
                 const judgerRunParameter: SandboxParameter = {
                     cgroup: config.cgroup,
                     chroot: config.chroot,
-                    environments: ["PATH=/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
+                    environments: ["PATH=/usr/lib/jvm/java-1.8-openjdk/bin:/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
                     executable: judgerLanguageInfo.execPath,
                     memory: memoryLimit,
                     mountProc: true,
