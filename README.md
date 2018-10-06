@@ -1,5 +1,5 @@
-# LightJudger
-Judger for LightOnlineJudge
+# PerillaJudger
+Judger for Perilla
 
 ```shell
 tar -xzvf alpine-minirootfs-3.8.1-x86_64.tar.gz -C ~/RootFS

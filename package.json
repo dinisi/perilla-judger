@@ -1,9 +1,9 @@
 {
-    "name": "light-judger",
+    "name": "perilla-judger",
     "version": "1.0.0",
-    "description": "Judger for LightOnlineJudge",
+    "description": "Judger for Perilla",
     "main": "dist/index.js",
-    "repository": "https://github.com/ZhangZisu/LightJudger",
+    "repository": "https://github.com/ZhangZisu/perilla-judger",
     "author": "ZhangZisu",
     "license": "Apache-2.0",
     "private": false,
