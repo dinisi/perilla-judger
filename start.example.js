@@ -1,4 +1,4 @@
-const start = require("dist").start;
+const start = require("./dist").start;
 
 start({
     cgroup: "test",
