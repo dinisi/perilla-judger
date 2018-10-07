@@ -1,66 +1,56 @@
-import { readFileSync, statSync } from "fs-extra";
+import { readFileSync } from "fs-extra";
 import { parse } from "path";
 import { getFile, getFileMeta } from "../file";
-import { IJudgerConfig, IProblemModel, ISolutionModel } from "../interfaces";
+import { IProblemModel, ISolutionModel } from "../interfaces";
 import { updateSolution } from "../solution";
 import { Robot } from "./robots/base";
-import { LYDSYRobot } from "./robots/lydsy";
-import { POJRobot } from "./robots/poj";
-import { UOJRobot } from "./robots/uoj";
+import { Plugin } from "../base";
+import { IRobotMapper } from "./interfaces";
 
-const robots: Robot[] = [
-    new POJRobot("zhangzisu_develop", "123456"),
-    new LYDSYRobot("zzsdev", "123456"),
-    // new UOJRobot("zhangzisu_develop", "123456"),
-];
-
-export const initialize = async (config: IJudgerConfig) => {
-    for (const robot of robots) {
-        await robot.initialize();
-    }
-};
-
-const watch = (robot: Robot, solution: ISolutionModel, originID: string, time: number) => {
-    robot.fetch(originID).then(async (result) => {
-        solution.status = result.status;
-        solution.result = result.result;
-        await updateSolution(solution);
-        if (result.continuous && time > 0) {
-            setTimeout(() => watch(robot, solution, originID, time - 1), 5000);
+export default class VirtualPlugin extends Plugin {
+    protected robots: IRobotMapper = {};
+    public constructor(robots: Robot[]) {
+        super();
+        for (let robot of robots) {
+            if (this.robots.hasOwnProperty(robot.getName())) throw new Error("Robot name duplicated");
+            this.robots[robot.getName()] = robot;
         }
-    });
-};
-
-export const virtual = async (config: IJudgerConfig, solution: ISolutionModel, problem: IProblemModel) => {
-    try {
-        solution.status = "Initialized";
-        if (solution.files.length !== 1) { throw new Error("Invalid submission"); }
-        const file = await getFile(solution.files[0]);
-        const meta = await getFileMeta(solution.files[0]);
-        // 1MB
-        if (meta.size > 1024 * 1024) { throw new Error("Solution too big"); }
-        const code = readFileSync(file).toString();
-        let ext = parse(meta.filename).ext;
-        if (!ext) { throw new Error("Invalid solution file"); }
-        ext = ext.substr(1, ext.length - 1);
-        let ojIndex = null;
-        switch (problem.data.origin) {
-            case "POJ":
-                ojIndex = 0;
-                break;
-            case "LYDSY":
-                ojIndex = 1;
-                break;
-            // case "UOJ":
-            //     ojIndex = 2;
-            //     break;
-        }
-        if (ojIndex === null) { throw new Error("Invalid Origin OnlineJudge"); }
-        const originID = await robots[ojIndex].submit(problem.data.problemID, code, ext);
-        watch(robots[ojIndex], solution, originID, 100);
-    } catch (e) {
-        solution.status = "Failed";
-        solution.result.log = e.message;
-        await updateSolution(solution);
     }
-};
+    public getType() { return "virtual"; }
+    public async initialize() {
+        for (const robotName in this.robots) {
+            await this.robots[robotName].initialize();
+        }
+    }
+    protected async watch(robot: Robot, solution: ISolutionModel, originID: string, time: number) {
+        robot.fetch(originID).then(async (result) => {
+            solution.status = result.status;
+            solution.result = result.result;
+            await updateSolution(solution);
+            if (result.continuous && time > 0) {
+                setTimeout(() => this.watch(robot, solution, originID, time - 1), 5000);
+            }
+        });
+    }
+    public async judge(solution: ISolutionModel, problem: IProblemModel) {
+        try {
+            solution.status = "Initialized";
+            if (solution.files.length !== 1) { throw new Error("Invalid submission"); }
+            const file = await getFile(solution.files[0]);
+            const meta = await getFileMeta(solution.files[0]);
+            // 1MB
+            if (meta.size > 1024 * 1024) { throw new Error("Solution too big"); }
+            const code = readFileSync(file).toString();
+            let ext = parse(meta.filename).ext;
+            if (!ext) { throw new Error("Invalid solution file"); }
+            ext = ext.substr(1, ext.length - 1);
+            if (!this.robots.hasOwnProperty(problem.data.origin)) { throw new Error("Invalid Origin OnlineJudge"); }
+            const originID = await this.robots[problem.data.origin].submit(problem.data.problemID, code, ext);
+            this.watch(this.robots[problem.data.origin], solution, originID, 100);
+        } catch (e) {
+            solution.status = "Failed";
+            solution.result.log = e.message;
+            await updateSolution(solution);
+        }
+    }
+}

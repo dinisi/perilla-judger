@@ -2,12 +2,13 @@ import { JSDOM } from "jsdom";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
 import { Robot } from "./base";
 
-export class LYDSYRobot extends Robot {
+export default class LYDSYRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
     private continuesStatus = ["Pending", "Pending_Rejudging", "Compiling", "Running_&_Judging", "Waiting"];
     public constructor(username: string, password: string) {
         super(username, password);
     }
+    public getName() { return "lydsy"; }
     public async isLoggedIn() {
         const result = await this.agent.get("https://www.lydsy.com/JudgeOnline/modifypage.php");
         return result.status === 200 && /Update Information/.test(result.text);

@@ -2,12 +2,13 @@ import { JSDOM } from "jsdom";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
 import { Robot } from "./base";
 
-export class POJRobot extends Robot {
+export default class POJRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
     private continuesStatus = ["Queuing", "Compiling", "Running", "Waiting"];
     public constructor(username: string, password: string) {
         super(username, password);
     }
+    public getName() { return "poj"; }
     public async isLoggedIn() {
         const result = await this.agent.get("http://poj.org/mail");
         return result.status === 200;

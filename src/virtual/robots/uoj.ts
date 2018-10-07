@@ -3,12 +3,13 @@ import { Browser, launch, Page } from "puppeteer";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
 import { Robot } from "./base";
 
-export class UOJRobot extends Robot {
+export default class UOJRobot extends Robot {
     private browser: Browser = null;
     private finalStatus = ["Compile Error", "Judgement Failed"];
     public constructor(username: string, password: string) {
         super(username, password);
     }
+    public getName() { return "uoj"; }
     public async isLoggedIn() {
         const page = await this.browser.newPage();
         try {

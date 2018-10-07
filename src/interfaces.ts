@@ -1,3 +1,5 @@
+import { Plugin } from "./base";
+
 export interface IBFileModel {
     _id: string;
     owner: string;
@@ -29,7 +31,6 @@ export interface IJudgerConfig {
     server: string;
     username: string;
     password: string;
-    user: string;
     cgroup: string;
     chroot: string;
 }
@@ -50,4 +51,8 @@ export interface ILanguageInfo {
     execParameters: string[];
     judgePath: string;
     judgeParameters: string[];
+}
+
+export interface IPluginMapper {
+    [key: string]: Plugin;
 }

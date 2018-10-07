@@ -43,7 +43,7 @@ export const compile = async (config: IJudgerConfig, fileID: string): Promise<IC
                 stderr: "stderr",
                 stdout: "stdout",
                 time: 10000,
-                user: config.user,
+                user: "root",
                 workingDirectory: "/root",
             };
             const compileProcess = await sandbox.startSandbox(compileParameter);

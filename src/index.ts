@@ -1,43 +1,36 @@
-import { promisifyAll } from "bluebird";
-import * as redis from "redis";
-import { direct } from "./direct";
 import * as http from "./http";
-import { IJudgerConfig, IProblemModel, ISolutionModel } from "./interfaces";
+import { IJudgerConfig, IProblemModel, ISolutionModel, IPluginMapper } from "./interfaces";
+import { updateSolution, getSolution } from "./solution";
+import { Plugin } from "./base";
 import { getProblem } from "./problem";
-import { getSolution, updateSolution } from "./solution";
-import { traditional } from "./traditional";
-import { initialize, virtual } from "./virtual";
 
-promisifyAll(redis);
-const instance: any = redis.createClient();
+const plugins: IPluginMapper = {};
+export const registerPlugin = (plugin: Plugin) => {
+    if (plugins.hasOwnProperty(plugin.getType())) {
+        throw new Error("Plugin already registered");
+    }
+    plugins[plugin.getType()] = plugin;
+}
 
-const choose = async (config: IJudgerConfig, solution: ISolutionModel, problem: IProblemModel) => {
-    solution.status = "Processing";
-    if (problem.data.type === "traditional") {
-        solution.result = { type: "traditional" };
-        await traditional(config, solution, problem);
-    } else if (problem.data.type === "direct") {
-        solution.result = { type: "direct" };
-        await direct(config, solution, problem);
-    } else if (problem.data.type === "virtual") {
-        solution.result = { type: "virtual" };
-        await virtual(config, solution, problem);
+export const initialize = async (config: IJudgerConfig) => {
+    await http.initialize(config);
+    for (let pluginName in plugins) {
+        await plugins[pluginName].initialize(config);
     }
 };
 
-export const start = async (config: IJudgerConfig) => {
-    await http.initialize(config);
-    await initialize(config);
-    const judgeLoop = async () => {
-        const solutionID = (await instance.rpopAsync("judgeTask"));
-        if (solutionID) {
-            // tslint:disable-next-line:no-console
-            console.log(`Attached solutionID: ${solutionID}`);
-            const solution = await getSolution(solutionID);
-            const problem = await getProblem(solution.problemID);
-            await choose(config, solution, problem);
+export const judge = async (solutionID: string) => {
+    let solution: ISolutionModel = null, problem: IProblemModel = null;
+    try {
+        solution = await getSolution(solutionID);
+        problem = await getProblem(solution.problemID);
+        if (!plugins.hasOwnProperty(problem.data.type)) throw new Error("Invalid data type");
+        await plugins[problem.data.type].judge(solution, problem);
+    } catch (e) {
+        if (solution) {
+            solution.status = "Failed";
+            solution.result.log = e.message;
+            await updateSolution(solution);
         }
-        setTimeout(judgeLoop, 50);
-    };
-    judgeLoop();
-};
+    }
+}

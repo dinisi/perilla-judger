@@ -7,6 +7,7 @@ export abstract class Robot {
         this.username = username;
         this.password = password;
     }
+    public abstract getName(): string;
     public abstract isLoggedIn(): Promise<boolean>;
     public abstract initialize(): Promise<void>;
     public abstract submit(problemID: string, code: string, language: string): Promise<string>;
