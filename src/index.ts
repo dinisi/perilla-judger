@@ -21,6 +21,7 @@ export const judge = async (solutionID: string) => {
     let solution: ISolutionModel = null, problem: IProblemModel = null;
     try {
         solution = await config.resolveSolution(solutionID);
+        solution.result = {};
         problem = await config.resolveProblem(solution.problemID);
         if (!plugins.hasOwnProperty(problem.data.type)) throw new Error("Invalid data type");
         await plugins[problem.data.type].judge(solution, problem);

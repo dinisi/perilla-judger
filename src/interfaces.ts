@@ -26,9 +26,6 @@ export interface IProblemModel {
 }
 
 export interface IJudgerConfig {
-    server: string;
-    username: string;
-    password: string;
     cgroup: string;
     chroot: string;
     resolveFile(fileID: string): Promise<IFileModel>;

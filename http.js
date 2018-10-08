@@ -1,36 +1,25 @@
-import { pbkdf2Sync } from "crypto";
-import { createWriteStream } from "fs";
-import { generate } from "randomstring";
-import * as request from "request";
-import { IJudgerConfig } from "./interfaces";
+const createWriteStream = require("fs").createWriteStream;
+const generate = require("randomstring").generate;
+const request = require("request");
 
-const getFuzzyTime = () => {
-    const date = new Date();
-    return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}`;
-};
+let authorization;
+let clientID;
+let baseURL;
 
-const getVerificationCode = (auth: string, cid: string) => {
-    return pbkdf2Sync(`${auth}.${getFuzzyTime()}`, cid, 1000, 64, "sha512").toString("hex");
-};
-
-let authorization: string;
-let clientID: string;
-let baseURL: string;
-
-export const initialize = async (config: IJudgerConfig) => {
+exports.initialize = async (server, username, password) => {
     // tslint:disable-next-line:no-console
     console.log("[INFO] [HTTP] HTTP Helper is initializing");
-    baseURL = config.server;
+    baseURL = server;
     clientID = generate(50);
     try {
-        authorization = await new Promise<string>((res, rej) => {
+        authorization = await new Promise((res, rej) => {
             const url = baseURL + "/login";
             const body = {
                 clientID,
-                password: config.password,
-                username: config.username,
+                password: password,
+                username: username,
             };
-            request.post({ url, body, json: true }, (err, response) => {
+            request.post({ url, body, json: true, rejectUnauthorized: false }, (err, response) => {
                 if (err) {
                     rej(err);
                 } else {
@@ -48,13 +37,13 @@ export const initialize = async (config: IJudgerConfig) => {
     }
 };
 
-export const get = async (requestURL: string, queries: any): Promise<any> => {
+exports.get = async (requestURL, queries) => {
     const q = { c: clientID, a: authorization };
     Object.assign(q, queries);
-    return new Promise<any>((res, rej) => {
+    return new Promise((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
-        request.get({ url, qs, json: true }, (err, response) => {
+        request.get({ url, qs, json: true, rejectUnauthorized: false }, (err, response) => {
             if (err) {
                 rej(err);
             } else {
@@ -65,13 +54,13 @@ export const get = async (requestURL: string, queries: any): Promise<any> => {
     });
 };
 
-export const post = async (requestURL: string, queries: any, body: any): Promise<any> => {
+exports.post = async (requestURL, queries, body) => {
     const q = { c: clientID, a: authorization };
     Object.assign(q, queries);
-    return new Promise<any>((res, rej) => {
+    return new Promise((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
-        request.post({ url, qs, body, json: true }, (err, response) => {
+        request.post({ url, qs, body, json: true, rejectUnauthorized: false }, (err, response) => {
             if (err) {
                 rej(err);
             } else {
@@ -82,13 +71,13 @@ export const post = async (requestURL: string, queries: any, body: any): Promise
     });
 };
 
-export const download = async (requestURL: string, queries: any, path: string) => {
+exports.download = async (requestURL, queries, path) => {
     const q = { c: clientID, a: authorization };
     Object.assign(q, queries);
-    return new Promise<void>((res, rej) => {
+    return new Promise((res, rej) => {
         const url = baseURL + requestURL;
         const qs = q;
         const headers = { authorization };
-        request.get({ url, qs, headers }).pipe(createWriteStream(path)).on("close", () => res()).on("error", () => rej());
+        request.get({ url, qs, headers, rejectUnauthorized: false }).pipe(createWriteStream(path)).on("close", () => res()).on("error", () => rej());
     });
 };

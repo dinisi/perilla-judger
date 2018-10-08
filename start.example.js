@@ -3,16 +3,24 @@ const promisifyAll = require("bluebird").promisifyAll;
 
 promisifyAll(redis);
 const instance = redis.createClient();
+const http = require("./http");
+
+const file = require("./file");
+const solution = require("./solution");
+const problem = require("./problem");
 
 const config = {
-    cgroup: "test",                    // Cgroup, for sandbox
-    chroot: "/path/to/rootfs",         // Your RootFS path
-    server: "your server",             // Your perilla server
-    username: "your username",         // Your perilla username
-    password: "your password",         // Your perilla password
+    cgroup: "cgroup",                  // Cgroup, for sandbox
+    chroot: "/path/to/RootFS",         // Your RootFS path
+    resolveSolution: solution.getSolution,
+    updateSolution: solution.updateSolution,
+    resolveProblem: problem.getProblem,
+    resolveFile: file.getFile
 };
 
 (async () => {
+    await http.initialize("https://perilla.example.com", "username", "password");
+
     const perillaJudger = require("./dist");
     // Register plugins
     // Direct (submit-answer) (提交答案)
@@ -28,12 +36,12 @@ const config = {
     const virtual = require("./dist/virtual").default;
     const POJRobot = require("./dist/virtual/robots/poj").default;
     perillaJudger.registerPlugin(new virtual([
-        new POJRobot("zhangzisu_develop", "123456")
+        // new POJRobot("zhangzisu_develop", "123456")
     ]));
     // Initialize perillaJudger
     await perillaJudger.initialize(config);
     while (true) {
-        const solutionID = (await instance.brpopAsync("judgeTask", 300));
+        const solutionID = (await instance.brpopAsync("judgeTask", 300))[1];
         if (solutionID) {
             await perillaJudger.judge(solutionID);
         }
