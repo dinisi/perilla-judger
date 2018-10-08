@@ -9,8 +9,8 @@ import { shortRead } from "../shortRead";
 import { IDataConfig, ITestcaseResult } from "./interfaces";
 import { Plugin } from "../base";
 
-const solutionPath = resolve("files/tmp/judge/direct/solution/");
-const judgerDir = resolve("files/tmp/judge/direct/judger/");
+const solutionPath = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/solution/"));
+const judgerDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/judger/"));
 
 export default class DirectPlugin extends Plugin {
     protected config: IJudgerConfig = null;

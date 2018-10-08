@@ -9,8 +9,8 @@ import { shortRead } from "../shortRead";
 import { IDataConfig, IResult, ISubtask, ITestcaseResult } from "./interfaces";
 import { Plugin } from "../base";
 
-const solutionDir = resolve("files/tmp/judge/traditional/solution/");
-const judgerDir = resolve("files/tmp/judge/traditional/judger/");
+const solutionDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/solution/"));
+const judgerDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/judger/"));
 
 export default class TraditionalPlugin extends Plugin {
     protected config: IJudgerConfig = null;

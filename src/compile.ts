@@ -7,7 +7,7 @@ import { ICompileResult, IJudgerConfig } from "./interfaces";
 import { getLanguageInfo } from "./language";
 import { shortRead } from "./shortRead";
 
-const compileDir = resolve("files/tmp/compile");
+const compileDir = resolve(join(process.env.TMP_DIR || "tmp", "compile"));
 
 export const compile = async (config: IJudgerConfig, file: IFileModel): Promise<ICompileResult> => {
     try {

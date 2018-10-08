@@ -40,7 +40,7 @@ const ensureFile = async (fileID) => {
             return result;
         }
     } catch (e) {
-        throw new Error("Network-File error");
+        throw e;
     }
 };
 
@@ -51,6 +51,6 @@ exports.getFile = async (fileID) => {
         result.path = getFilePath(fileID);
         return result;
     } catch (e) {
-        throw new Error("Network-File error");
+        throw e;
     }
 };
