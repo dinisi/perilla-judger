@@ -3,11 +3,9 @@ import { join, parse, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
 import { compile } from "../compile";
-import { getFile, getFileMeta } from "../file";
 import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel } from "../interfaces";
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
-import { updateSolution } from "../solution";
 import { IDataConfig, IResult, ISubtask, ITestcaseResult } from "./interfaces";
 import { Plugin } from "../base";
 
@@ -28,7 +26,7 @@ export default class TraditionalPlugin extends Plugin {
             if (solution.files.length !== 1) { throw new Error("Invalid submission"); }
             const sourceFile = solution.files[0];
             const data = problem.data as IDataConfig;
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
 
             ensureDirSync(solutionDir);
             emptyDirSync(solutionDir);
@@ -37,28 +35,30 @@ export default class TraditionalPlugin extends Plugin {
 
             solution.result.log += "Compiling judger\n";
             if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
-            const judgerCompileResult = await compile(this.config, problem.files[data.judgerFile]);
+            const resolvedJudger = await this.config.resolveFile(problem.files[data.judgerFile]);
+            const judgerCompileResult = await compile(this.config, resolvedJudger);
             solution.result.judgerCompileResult = judgerCompileResult.output;
             if (!judgerCompileResult.success) {
                 solution.status = "Judger CE";
-                await updateSolution(solution);
+                await this.config.updateSolution(solution);
                 return;
             }
-            const judgerExt = parse(getFileMeta(problem.files[data.judgerFile]).filename).ext;
+            const judgerExt = parse(resolvedJudger.filename).ext;
             if (!judgerExt) { throw new Error("Invalid judger file"); }
             const judgerLanguageInfo = getLanguageInfo(judgerExt.substr(1, judgerExt.length - 1)) as ILanguageInfo;
             const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
             copySync(judgerCompileResult.execFile, judgerExecFile);
 
             solution.result.log += "Compiling solution\n";
-            const solutionCompileResult = await compile(this.config, sourceFile);
+            const resolvedSolution = await this.config.resolveFile(sourceFile);
+            const solutionCompileResult = await compile(this.config, resolvedSolution);
             solution.result.compileResult = solutionCompileResult.output;
             if (!solutionCompileResult.success) {
                 solution.status = "Solution CE";
-                await updateSolution(solution);
+                await this.config.updateSolution(solution);
                 return;
             }
-            const solutionExt = parse(getFileMeta(sourceFile).filename).ext;
+            const solutionExt = parse(resolvedSolution.filename).ext;
             if (!solutionExt) { throw new Error("Invalid solution file"); }
             const solutionLanguageInfo = getLanguageInfo(solutionExt.substr(1, solutionExt.length - 1)) as ILanguageInfo;
             const solutionExecFile = join(solutionDir, solutionLanguageInfo.compiledFilename);
@@ -76,8 +76,8 @@ export default class TraditionalPlugin extends Plugin {
                 try {
                     if (!problem.files[inputID] || !problem.files[outputID]) throw new Error("Invalid data config");
                     // 获取文件
-                    const input = await getFile(problem.files[inputID]);
-                    const output = await getFile(problem.files[outputID]);
+                    const input = (await this.config.resolveFile(problem.files[inputID])).path;
+                    const output = (await this.config.resolveFile(problem.files[outputID])).path;
 
                     // 初始化临时文件夹
                     const runDir = resolve("files/tmp/run/run");
@@ -159,7 +159,7 @@ export default class TraditionalPlugin extends Plugin {
                     copyFileSync(stderr, join(runDir, "usererr"));
                     copyFileSync(input, join(runDir, "input"));
                     copyFileSync(output, join(runDir, "output"));
-                    copyFileSync(await getFile(sourceFile), join(runDir, "source"));
+                    copyFileSync(resolvedSolution.path, join(runDir, "source"));
                     copyFileSync(judgerExecFile, join(runDir, judgerLanguageInfo.compiledFilename));
                     const judgerRunParameter: SandboxParameter = {
                         cgroup: this.config.cgroup,
@@ -242,7 +242,7 @@ export default class TraditionalPlugin extends Plugin {
                     if (subtasks[name].resolved) {
                         solution.status = "Data Error";
                         (solution.result as IResult).log = "Cyclic dependence detected";
-                        await updateSolution(solution);
+                        await this.config.updateSolution(solution);
                         return;
                     }
                     subtasks[name].resolved = true;
@@ -261,7 +261,7 @@ export default class TraditionalPlugin extends Plugin {
                     if (solution.status === "Judging" && !(solution.result.subtasks[name].status === "Accepted")) {
                         solution.status = solution.result.subtasks[name].status;
                     }
-                    await updateSolution(solution);
+                    await this.config.updateSolution(solution);
                 } catch (e) {
                     solution.status = "Failed";
                 }
@@ -269,7 +269,7 @@ export default class TraditionalPlugin extends Plugin {
 
             solution.result.subtasks = {};
             solution.status = "Judging";
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
 
             solution.result.log += "Resolving subtasks\n";
             for (const name in subtasks) {
@@ -297,11 +297,11 @@ export default class TraditionalPlugin extends Plugin {
                 solution.status = "Accepted";
             }
             solution.result.log += `Done at ${new Date()}`;
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
         } catch (e) {
             solution.status = "Failed";
             solution.result.log += e.message;
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
         }
     }
 };

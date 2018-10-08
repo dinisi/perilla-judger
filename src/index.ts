@@ -1,10 +1,8 @@
-import * as http from "./http";
 import { IJudgerConfig, IProblemModel, ISolutionModel, IPluginMapper } from "./interfaces";
-import { updateSolution, getSolution } from "./solution";
 import { Plugin } from "./base";
-import { getProblem } from "./problem";
 
 const plugins: IPluginMapper = {};
+let config: IJudgerConfig = null;
 export const registerPlugin = (plugin: Plugin) => {
     if (plugins.hasOwnProperty(plugin.getType())) {
         throw new Error("Plugin already registered");
@@ -12,8 +10,8 @@ export const registerPlugin = (plugin: Plugin) => {
     plugins[plugin.getType()] = plugin;
 }
 
-export const initialize = async (config: IJudgerConfig) => {
-    await http.initialize(config);
+export const initialize = async (_config: IJudgerConfig) => {
+    config = _config;
     for (let pluginName in plugins) {
         await plugins[pluginName].initialize(config);
     }
@@ -22,15 +20,15 @@ export const initialize = async (config: IJudgerConfig) => {
 export const judge = async (solutionID: string) => {
     let solution: ISolutionModel = null, problem: IProblemModel = null;
     try {
-        solution = await getSolution(solutionID);
-        problem = await getProblem(solution.problemID);
+        solution = await config.resolveSolution(solutionID);
+        problem = await config.resolveProblem(solution.problemID);
         if (!plugins.hasOwnProperty(problem.data.type)) throw new Error("Invalid data type");
         await plugins[problem.data.type].judge(solution, problem);
     } catch (e) {
         if (solution) {
             solution.status = "Failed";
             solution.result.log = e.message;
-            await updateSolution(solution);
+            await config.updateSolution(solution);
         }
     }
 }

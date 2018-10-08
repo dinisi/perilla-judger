@@ -3,11 +3,9 @@ import { join, parse, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter } from "simple-sandbox/lib/interfaces";
 import { compile } from "../compile";
-import { getFile, getFileMeta } from "../file";
 import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel } from "../interfaces";
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
-import { updateSolution } from "../solution";
 import { IDataConfig, ITestcaseResult } from "./interfaces";
 import { Plugin } from "../base";
 
@@ -29,19 +27,20 @@ export default class DirectPlugin extends Plugin {
             emptyDirSync(solutionPath);
             ensureDirSync(judgerDir);
             emptyDirSync(judgerDir);
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
             const data = problem.data as IDataConfig;
 
             solution.result.log += "Compiling judger\n";
             if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
-            const judgerCompileResult = await compile(this.config, problem.files[data.judgerFile]);
+            const resolvedJudger = await this.config.resolveFile(problem.files[data.judgerFile]);
+            const judgerCompileResult = await compile(this.config, resolvedJudger);
             solution.result.judgerCompileResult = judgerCompileResult.output;
             if (!judgerCompileResult.success) {
                 solution.status = "Judger CE";
-                await updateSolution(solution);
+                await this.config.updateSolution(solution);
                 return;
             }
-            const ext = parse(getFileMeta(problem.files[data.judgerFile]).filename).ext;
+            const ext = parse(resolvedJudger.filename).ext;
             if (!ext) { throw new Error("Invalid judger file"); }
             const judgerLanguageInfo = getLanguageInfo(ext.substr(1, ext.length - 1)) as ILanguageInfo;
             const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
@@ -52,9 +51,9 @@ export default class DirectPlugin extends Plugin {
             solution.result.status = "Judging";
             for (const testcase of data.testcases) {
                 if (!solution.files[testcase.fileIndex]) { throw new Error("Invalid solution"); }
-                const user = await getFile(solution.files[testcase.fileIndex]);
+                const user = (await this.config.resolveFile(solution.files[testcase.fileIndex])).path;
                 if (!problem.files[testcase.extraFile]) throw new Error("Invalid data config");
-                const extra = await getFile(problem.files[testcase.extraFile]);
+                const extra = (await this.config.resolveFile(problem.files[testcase.extraFile])).path;
                 const runDir = resolve("files/tmp/run/run");
                 ensureDirSync(runDir);
                 emptyDirSync(runDir);
@@ -100,11 +99,11 @@ export default class DirectPlugin extends Plugin {
                 solution.result.status = "Accepted";
             }
             solution.result.log += `Done at ${new Date()}`;
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
         } catch (e) {
             solution.status = "Failed";
             solution.result.log += e.message;
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
         }
     }
 }

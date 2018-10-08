@@ -2,21 +2,19 @@ import { copyFileSync, emptyDirSync, ensureDirSync, existsSync, pathExists, read
 import { join, parse, resolve } from "path";
 import * as sandbox from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
-import { getFile, getFileMeta } from "./file";
-import { ILanguageInfo } from "./interfaces";
+import { ILanguageInfo, IFileModel } from "./interfaces";
 import { ICompileResult, IJudgerConfig } from "./interfaces";
 import { getLanguageInfo } from "./language";
 import { shortRead } from "./shortRead";
 
 const compileDir = resolve("files/tmp/compile");
 
-export const compile = async (config: IJudgerConfig, fileID: string): Promise<ICompileResult> => {
+export const compile = async (config: IJudgerConfig, file: IFileModel): Promise<ICompileResult> => {
     try {
-        const source = await getFile(fileID);
-        const meta = getFileMeta(fileID);
+        const source = file.path;
         ensureDirSync(compileDir);
         emptyDirSync(compileDir);
-        let ext = parse(meta.filename).ext;
+        let ext = parse(file.filename).ext;
         if (!ext) { throw new Error("Invalid compile request"); }
         ext = ext.substr(1, ext.length - 1);
         const info = getLanguageInfo(ext) as ILanguageInfo;

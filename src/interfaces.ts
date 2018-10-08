@@ -1,14 +1,12 @@
 import { Plugin } from "./base";
 
-export interface IBFileModel {
+export interface IFileModel {
     _id: string;
-    owner: string;
     filename: string;
     description: string;
     hash: string;
     size: number;
-    allowedRead: string[];
-    allowedModify: string[];
+    path: string;
     created: Date;
 }
 
@@ -33,6 +31,10 @@ export interface IJudgerConfig {
     password: string;
     cgroup: string;
     chroot: string;
+    resolveFile(fileID: string): Promise<IFileModel>;
+    resolveSolution(solutionID: string): Promise<ISolutionModel>;
+    updateSolution(solution: ISolutionModel): Promise<void>;
+    resolveProblem(problemID: string): Promise<IProblemModel>;
 }
 
 export interface ICompileResult {

@@ -1,14 +1,13 @@
 import { readFileSync } from "fs-extra";
 import { parse } from "path";
-import { getFile, getFileMeta } from "../file";
-import { IProblemModel, ISolutionModel } from "../interfaces";
-import { updateSolution } from "../solution";
+import { IProblemModel, ISolutionModel, IJudgerConfig } from "../interfaces";
 import { Robot } from "./robots/base";
 import { Plugin } from "../base";
 import { IRobotMapper } from "./interfaces";
 
 export default class VirtualPlugin extends Plugin {
     protected robots: IRobotMapper = {};
+    protected config: IJudgerConfig = null;
     public constructor(robots: Robot[]) {
         super();
         for (let robot of robots) {
@@ -17,7 +16,8 @@ export default class VirtualPlugin extends Plugin {
         }
     }
     public getType() { return "virtual"; }
-    public async initialize() {
+    public async initialize(config: IJudgerConfig) {
+        this.config = config;
         for (const robotName in this.robots) {
             await this.robots[robotName].initialize();
         }
@@ -26,7 +26,7 @@ export default class VirtualPlugin extends Plugin {
         robot.fetch(originID).then(async (result) => {
             solution.status = result.status;
             solution.result = result.result;
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
             if (result.continuous && time > 0) {
                 setTimeout(() => this.watch(robot, solution, originID, time - 1), 5000);
             }
@@ -36,12 +36,11 @@ export default class VirtualPlugin extends Plugin {
         try {
             solution.status = "Initialized";
             if (solution.files.length !== 1) { throw new Error("Invalid submission"); }
-            const file = await getFile(solution.files[0]);
-            const meta = await getFileMeta(solution.files[0]);
+            const resolvedFile = await this.config.resolveFile(solution.files[0]);
             // 1MB
-            if (meta.size > 1024 * 1024) { throw new Error("Solution too big"); }
-            const code = readFileSync(file).toString();
-            let ext = parse(meta.filename).ext;
+            if (resolvedFile.size > 1024 * 1024) { throw new Error("Solution too big"); }
+            const code = readFileSync(resolvedFile.path).toString();
+            let ext = parse(resolvedFile.filename).ext;
             if (!ext) { throw new Error("Invalid solution file"); }
             ext = ext.substr(1, ext.length - 1);
             if (!this.robots.hasOwnProperty(problem.data.origin)) { throw new Error("Invalid Origin OnlineJudge"); }
@@ -50,7 +49,7 @@ export default class VirtualPlugin extends Plugin {
         } catch (e) {
             solution.status = "Failed";
             solution.result.log = e.message;
-            await updateSolution(solution);
+            await this.config.updateSolution(solution);
         }
     }
 }
