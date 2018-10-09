@@ -31,13 +31,13 @@ const ensureFile = async (fileID) => {
             if (!remote || (typeof remote !== "object")) { throw new Error(); }
             setFileMeta(fileID, remote);
             await http.download(`/api/file/${fileID}/raw`, {}, getFilePath(fileID));
-            return true;
         } else {
             const local = getFileMeta(fileID);
             const remote = await http.get(`/api/file/${fileID}`, {});
-            const result = local.hash !== remote.hash;
+            if (local.hash !== remote.hash) {
+                await http.download(`/api/file/${fileID}/raw`, {}, getFilePath(fileID));
+            }
             setFileMeta(fileID, remote);
-            return result;
         }
     } catch (e) {
         throw e;
