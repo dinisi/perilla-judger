@@ -54,7 +54,7 @@ export default class DirectPlugin extends Plugin {
                 const user = (await this.config.resolveFile(solution.files[testcase.fileIndex])).path;
                 if (!problem.files[testcase.extraFile]) throw new Error("Invalid data config");
                 const extra = (await this.config.resolveFile(problem.files[testcase.extraFile])).path;
-                const runDir = resolve("files/tmp/run/run");
+                const runDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/exec/run"));
                 ensureDirSync(runDir);
                 emptyDirSync(runDir);
                 copyFileSync(extra, join(runDir, "extra"));

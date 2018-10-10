@@ -80,8 +80,8 @@ export default class TraditionalPlugin extends Plugin {
                     const output = (await this.config.resolveFile(problem.files[outputID])).path;
 
                     // 初始化临时文件夹
-                    const runDir = resolve("files/tmp/run/run");
-                    const tmpDir = resolve("files/tmp/run/tmp");
+                    const runDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/exec/run"));
+                    const tmpDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/exec/tmp"));
                     ensureDirSync(runDir);
                     ensureDirSync(tmpDir);
                     emptyDirSync(runDir);
