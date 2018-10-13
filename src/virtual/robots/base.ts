@@ -1,4 +1,4 @@
-import { IResult, IRobotFetchResult } from "../interfaces";
+import { IRobotFetchResult } from "../interfaces";
 
 export abstract class Robot {
     protected username: string;

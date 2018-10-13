@@ -3,11 +3,12 @@ import { join, parse, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter } from "simple-sandbox/lib/interfaces";
 import { compile } from "../compile";
-import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel } from "../interfaces";
+import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel, SolutionResult } from "../interfaces";
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
-import { IDataConfig, ITestcaseResult } from "./interfaces";
+import { IDataConfig } from "./interfaces";
 import { Plugin } from "../base";
+import { append } from "../utils";
 
 const solutionPath = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/solution/"));
 const judgerDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/judger/"));
@@ -19,10 +20,14 @@ export default class DirectPlugin extends Plugin {
     }
     public getType() { return "direct"; }
     public async judge(solution: ISolutionModel, problem: IProblemModel) {
+        const log = (str:string) => {
+            solution.log = append(solution.log, str);
+        }
         try {
-            solution.status = "Initialized";
-            solution.result.score = 0;
-            solution.result.log = `Initialized at ${new Date()}\n`;
+
+            solution.status = SolutionResult.Judging;
+            solution.score = 0;
+            log(`Initialized at ${new Date()}`);
             ensureDirSync(solutionPath);
             emptyDirSync(solutionPath);
             ensureDirSync(judgerDir);
@@ -30,28 +35,24 @@ export default class DirectPlugin extends Plugin {
             await this.config.updateSolution(solution);
             const data = problem.data as IDataConfig;
 
-            solution.result.log += "Compiling judger\n";
+            log("Compiling judger");
             if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
             const resolvedJudger = await this.config.resolveFile(problem.files[data.judgerFile]);
             const judgerCompileResult = await compile(this.config, resolvedJudger);
-            solution.result.judgerCompileResult = judgerCompileResult.output;
-            if (!judgerCompileResult.success) {
-                solution.status = "Judger CE";
-                await this.config.updateSolution(solution);
-                return;
-            }
+            log(judgerCompileResult.output);
+            if (!judgerCompileResult.success) throw new Error("Judger Compile Error");
             const ext = parse(resolvedJudger.filename).ext;
             if (!ext) { throw new Error("Invalid judger file"); }
             const judgerLanguageInfo = getLanguageInfo(ext.substr(1, ext.length - 1)) as ILanguageInfo;
             const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
             copySync(judgerCompileResult.execFile, judgerExecFile);
 
-            solution.result.log += "Resolving testcases\n";
-            solution.result.testcases = [];
-            solution.result.status = "Judging";
+            log("Resolving testcases");
+            solution.status = SolutionResult.Judging;
+            const scorePerCase = 100 / data.testcases.length;
             for (const testcase of data.testcases) {
-                if (!solution.files[testcase.fileIndex]) { throw new Error("Invalid solution"); }
-                const user = (await this.config.resolveFile(solution.files[testcase.fileIndex])).path;
+                if (!solution.fileIDs[testcase.fileIndex]) { throw new Error("Invalid solution"); }
+                const user = (await this.config.resolveFile(solution.fileIDs[testcase.fileIndex])).path;
                 if (!problem.files[testcase.extraFile]) throw new Error("Invalid data config");
                 const extra = (await this.config.resolveFile(problem.files[testcase.extraFile])).path;
                 const runDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/exec/run"));
@@ -84,25 +85,24 @@ export default class DirectPlugin extends Plugin {
                 };
                 const judgerProcess = await startSandbox(judgerRunParameter);
                 const judgerRunResult = await judgerProcess.waitForStop();
-                const result: ITestcaseResult = {
-                    extra: shortRead(join(runDir, "stdout")),
-                    score: judgerRunResult.code === 0 ? 1 : 0,
-                    status: judgerRunResult.code === 0 ? "Accepted" : "Wrong Answer",
-                };
-                solution.result.testcases.push(result);
-                solution.result.score += result.score;
-                if (solution.result.status === "Judging" && !(result.status === "Accepted")) {
-                    solution.result.status = result.status;
+                log("extra:");
+                log(shortRead(join(runDir, "stdout")));
+
+                let score = judgerRunResult.code === 0 ? 100 : 0;
+                let status = judgerRunResult.code === 0 ? SolutionResult.Accepted : SolutionResult.WrongAnswer;
+                solution.score += score * scorePerCase / 100;
+                if (solution.status === SolutionResult.Judging && status !== SolutionResult.Accepted) {
+                    solution.status = status;
                 }
             }
-            if (solution.result.status === "Judging") {
-                solution.result.status = "Accepted";
+            if (solution.status === SolutionResult.Judging) {
+                solution.status = SolutionResult.Accepted;
             }
-            solution.result.log += `Done at ${new Date()}`;
+            log(`Done at ${new Date()}`);
             await this.config.updateSolution(solution);
         } catch (e) {
-            solution.status = "Failed";
-            solution.result.log += e.message;
+            solution.status = SolutionResult.JudgementFailed;
+            log(e.message);
             await this.config.updateSolution(solution);
         }
     }

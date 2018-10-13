@@ -3,11 +3,12 @@ import { join, parse, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
 import { compile } from "../compile";
-import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel } from "../interfaces";
+import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel, SolutionResult } from "../interfaces";
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
-import { IDataConfig, IResult, ISubtask, ITestcaseResult } from "./interfaces";
+import { IDataConfig, ISubtask } from "./interfaces";
 import { Plugin } from "../base";
+import { append, convertStatus } from "../utils";
 
 const solutionDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/solution/"));
 const judgerDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/judger/"));
@@ -20,11 +21,11 @@ export default class TraditionalPlugin extends Plugin {
     public getType() { return "traditional"; }
     public async judge(solution: ISolutionModel, problem: IProblemModel): Promise<void> {
         try {
-            solution.status = "Initialized";
-            solution.result.score = 0;
-            solution.result.log = `Initialized at ${new Date()}\n`;
-            if (solution.files.length !== 1) { throw new Error("Invalid submission"); }
-            const sourceFile = solution.files[0];
+            solution.status = SolutionResult.Judging;
+            solution.score = 0;
+            solution.log = append(solution.log, `Initialized at ${new Date()}`);
+            if (solution.fileIDs.length !== 1) { throw new Error("Invalid submission"); }
+            const sourceFile = solution.fileIDs[0];
             const data = problem.data as IDataConfig;
             await this.config.updateSolution(solution);
 
@@ -33,28 +34,23 @@ export default class TraditionalPlugin extends Plugin {
             ensureDirSync(judgerDir);
             emptyDirSync(judgerDir);
 
-            solution.result.log += "Compiling judger\n";
+            solution.log = append(solution.log, "Compiling judger...");
             if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
             const resolvedJudger = await this.config.resolveFile(problem.files[data.judgerFile]);
             const judgerCompileResult = await compile(this.config, resolvedJudger);
-            solution.result.judgerCompileResult = judgerCompileResult.output;
-            if (!judgerCompileResult.success) {
-                solution.status = "Judger CE";
-                await this.config.updateSolution(solution);
-                return;
-            }
+            solution.log = append(solution.log, judgerCompileResult.output);
+            if (!judgerCompileResult.success) throw new Error("Judger Compile Error");
             const judgerExt = parse(resolvedJudger.filename).ext;
             if (!judgerExt) { throw new Error("Invalid judger file"); }
             const judgerLanguageInfo = getLanguageInfo(judgerExt.substr(1, judgerExt.length - 1)) as ILanguageInfo;
             const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
             copySync(judgerCompileResult.execFile, judgerExecFile);
-
-            solution.result.log += "Compiling solution\n";
+            solution.log = append(solution.log, "Compiling solution...");
             const resolvedSolution = await this.config.resolveFile(sourceFile);
             const solutionCompileResult = await compile(this.config, resolvedSolution);
-            solution.result.compileResult = solutionCompileResult.output;
+            solution.log = append(solution.log, solutionCompileResult.output);
             if (!solutionCompileResult.success) {
-                solution.status = "Solution CE";
+                solution.status = SolutionResult.CompileError;
                 await this.config.updateSolution(solution);
                 return;
             }
@@ -72,12 +68,21 @@ export default class TraditionalPlugin extends Plugin {
             }
 
             // JudgeTest
-            const judgeTest = async (inputID: number, outputID: number, timeLimit: number, memoryLimit: number): Promise<ITestcaseResult> => {
+            const judgeTest = async (inputID: number, outputID: number, timeLimit: number, memoryLimit: number) => {
+                solution.log = append(solution.log, `// Judging [${inputID}-${outputID}]`);
+                let status = SolutionResult.Judging;
+                let score = 0;
+                let time = 0;
+                let memory = 0;
                 try {
                     if (!problem.files[inputID] || !problem.files[outputID]) throw new Error("Invalid data config");
                     // 获取文件
                     const input = (await this.config.resolveFile(problem.files[inputID])).path;
                     const output = (await this.config.resolveFile(problem.files[outputID])).path;
+                    solution.log = append(solution.log, "input:");
+                    solution.log = append(solution.log, shortRead(input));
+                    solution.log = append(solution.log, "output:");
+                    solution.log = append(solution.log, shortRead(output));
 
                     // 初始化临时文件夹
                     const runDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/exec/run"));
@@ -127,180 +132,163 @@ export default class TraditionalPlugin extends Plugin {
                     copyFileSync(join(runDir, "stderr"), stderr);
 
                     // 初始化返回值 ITestcaseResult
-                    const result: ITestcaseResult = {
-                        extra: "",
-                        input: shortRead(input),
-                        memory: solutionRunResult.memory,
-                        output: shortRead(output),
-                        score: 0,
-                        status: "",
-                        stderr: shortRead(stderr),
-                        stdout: shortRead(stdout),
-                        time: solutionRunResult.time,
-                    };
+                    time = solutionRunResult.time;
+                    memory = solutionRunResult.memory;
 
-                    // 用户程序非正常退出
+                    solution.log = append(solution.log, "stdout:");
+                    solution.log = append(solution.log, shortRead(stdout));
+                    solution.log = append(solution.log, "stderr:");
+                    solution.log = append(solution.log, shortRead(stderr));
+                    solution.log = append(solution.log, "Run result:");
+                    solution.log = append(solution.log, `${time} ms ${memory} KB ${SandboxStatus[solutionRunResult.status]}`);
+
                     if (solutionRunResult.status !== SandboxStatus.OK) {
-                        result.status = SandboxStatus[solutionRunResult.status];
-                        result.extra = JSON.stringify(solutionRunResult);
-                        return result;
-                    }
-
-                    // 初始化评分环境
-                    // 评分程序目录结构：
-                    // /root/execFile
-                    //      /userout: 用户输出流
-                    //      /usererr: 用户错误流
-                    //      /input : 标准输入
-                    //      /output: 标准输出
-                    //      /source: 用户程序
-                    emptyDirSync(runDir);
-                    copyFileSync(stdout, join(runDir, "userout"));
-                    copyFileSync(stderr, join(runDir, "usererr"));
-                    copyFileSync(input, join(runDir, "input"));
-                    copyFileSync(output, join(runDir, "output"));
-                    copyFileSync(resolvedSolution.path, join(runDir, "source"));
-                    copyFileSync(judgerExecFile, join(runDir, judgerLanguageInfo.compiledFilename));
-                    const judgerRunParameter: SandboxParameter = {
-                        cgroup: this.config.cgroup,
-                        chroot: this.config.chroot,
-                        environments: ["PATH=/usr/lib/jvm/java-1.8-openjdk/bin:/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
-                        executable: judgerLanguageInfo.execPath,
-                        memory: memoryLimit,
-                        mountProc: true,
-                        mounts: [
-                            {
-                                dst: "/root",
-                                limit: -1,
-                                src: runDir,
-                            },
-                        ],
-                        parameters: judgerLanguageInfo.execParameters,
-                        process: -1,
-                        redirectBeforeChroot: false,
-                        stdout: "extra",
-                        time: timeLimit,
-                        user: "root",
-                        workingDirectory: "/root",
-                    };
-
-                    // 获得评测结果 正常退出=1 非正常退出=0
-                    const judgerProcess = await startSandbox(judgerRunParameter);
-                    const judgerRunResult = await judgerProcess.waitForStop();
-                    copyFileSync(join(runDir, "extra"), extra);
-
-                    result.extra = shortRead(extra);
-                    if (judgerRunResult.status === SandboxStatus.OK && judgerRunResult.code === 0) {
-                        result.score = 1;
-                        result.status = "Accepted";
+                        status = convertStatus(solutionRunResult.status);
                     } else {
-                        result.score = 0;
-                        result.status = "Wrong Answer";
+                        // 初始化评分环境
+                        // 评分程序目录结构：
+                        // /root/execFile
+                        //      /userout: 用户输出流
+                        //      /usererr: 用户错误流
+                        //      /input : 标准输入
+                        //      /output: 标准输出
+                        //      /source: 用户程序
+                        emptyDirSync(runDir);
+                        copyFileSync(stdout, join(runDir, "userout"));
+                        copyFileSync(stderr, join(runDir, "usererr"));
+                        copyFileSync(input, join(runDir, "input"));
+                        copyFileSync(output, join(runDir, "output"));
+                        copyFileSync(resolvedSolution.path, join(runDir, "source"));
+                        copyFileSync(judgerExecFile, join(runDir, judgerLanguageInfo.compiledFilename));
+                        const judgerRunParameter: SandboxParameter = {
+                            cgroup: this.config.cgroup,
+                            chroot: this.config.chroot,
+                            environments: ["PATH=/usr/lib/jvm/java-1.8-openjdk/bin:/usr/share/Modules/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
+                            executable: judgerLanguageInfo.execPath,
+                            memory: memoryLimit,
+                            mountProc: true,
+                            mounts: [
+                                {
+                                    dst: "/root",
+                                    limit: -1,
+                                    src: runDir,
+                                },
+                            ],
+                            parameters: judgerLanguageInfo.execParameters,
+                            process: -1,
+                            redirectBeforeChroot: false,
+                            stdout: "extra",
+                            time: timeLimit,
+                            user: "root",
+                            workingDirectory: "/root",
+                        };
+
+                        // 获得评测结果 正常退出=1 非正常退出=0
+                        const judgerProcess = await startSandbox(judgerRunParameter);
+                        const judgerRunResult = await judgerProcess.waitForStop();
+                        copyFileSync(join(runDir, "extra"), extra);
+
+                        solution.log = append(solution.log, "extra:");
+                        solution.log = append(solution.log, shortRead(extra));
+
+                        if (judgerRunResult.status === SandboxStatus.OK && judgerRunResult.code === 0) {
+                            score = 100;
+                            status = SolutionResult.Accepted;
+                        } else {
+                            score = 0;
+                            status = SolutionResult.WrongAnswer;
+                        }
                     }
-                    return result;
                 } catch (e) {
-                    return {
-                        extra: e.message,
-                        input: "",
-                        memory: 0,
-                        output: "",
-                        score: 0,
-                        status: "Error",
-                        stderr: "",
-                        stdout: "",
-                        time: 0,
-                    };
+                    status = SolutionResult.JudgementFailed;
+                    solution.log = append(solution.log, e.message);
                 }
+                return { status, score, time, memory };
             };
 
             // JudgeTask
             const judgeTask = async (name: string) => {
+                solution.log = append(solution.log, `// Judging subtask ${name}`);
+                const tasks = subtasks[name] as ISubtask;
+                let status = SolutionResult.Judging;
+                let score = 0;
+                let time = 0;
+                let memory = 0;
                 try {
-                    const tasks = subtasks[name] as ISubtask;
-                    solution.result.subtasks[name] = { status: "Judging", score: 0, time: 0, memory: 0, testcases: [] };
-                    const scorePerCase = tasks.score / tasks.testcases.length;
-                    for (const test of tasks.testcases) {
+                    const scorePerCase = 100 / tasks.testcases.length;
+                    for (const i in tasks.testcases) {
+                        const test = tasks.testcases[i];
+                        solution.log = append(solution.log, "Judging task")
                         const result = await judgeTest(test.input, test.output, tasks.timeLimit, tasks.memoryLimit);
-                        solution.result.subtasks[name].testcases.push(result);
-                        solution.result.subtasks[name].time += result.time;
-                        solution.result.subtasks[name].memory += result.memory;
-                        solution.result.subtasks[name].score += result.score * scorePerCase;
-                        if (solution.result.subtasks[name].status === "Judging" && !(result.status === "Accepted")) {
-                            solution.result.subtasks[name].status = result.status;
+                        time += result.time;
+                        memory = Math.max(memory, result.memory);
+                        score += result.score * scorePerCase / 100;
+                        if (status === SolutionResult.Judging && !(result.status === SolutionResult.Accepted)) {
+                            status = result.status;
                             if (tasks.autoSkip) { break; }
                         }
                     }
-                    if (solution.result.subtasks[name].status === "Judging") { solution.result.subtasks[name].status = "Accepted"; }
+                    if (status === SolutionResult.Judging) { status = SolutionResult.Accepted; }
                 } catch (e) {
-                    solution.result.subtasks[name].status = "Failed";
-                    solution.result.subtasks[name].score = 0;
+                    status = SolutionResult.JudgementFailed;
                 }
+                return { status, score, time, memory };
             };
 
+            let result: any = {};
+            let time = 0;
+            let memory = 0;
             const resolveSubtask = async (name: string) => {
-                try {
-                    if (subtasks[name].resolved) {
-                        solution.status = "Data Error";
-                        (solution.result as IResult).log = "Cyclic dependence detected";
-                        await this.config.updateSolution(solution);
-                        return;
-                    }
-                    subtasks[name].resolved = true;
-                    solution.result.subtasks[name] = {};
-                    if (subtasks[name].depends && subtasks[name].depends instanceof Array) {
-                        for (const dep of subtasks[name].depends) {
-                            await resolveSubtask(dep);
-                            if (solution.result.subtasks[dep].status !== "Accepted") {
-                                solution.result.subtasks[name].status = "Skipped";
-                                solution.result.subtasks[name].score = 0;
-                                return;
-                            }
+                if (subtasks[name].resolved) {
+                    throw new Error("Cyclic dependence detected");
+                }
+                subtasks[name].resolved = true;
+                result.subtasks[name] = {};
+                let self = {
+                    status: SolutionResult.Judging,
+                    time: 0,
+                    memory: 0,
+                    score: 0,
+                };
+                if (subtasks[name].depends && subtasks[name].depends instanceof Array) {
+                    for (const dep of subtasks[name].depends) {
+                        await resolveSubtask(dep);
+                        if (result.subtasks[dep].status !== SolutionResult.Accepted) {
+                            self.status = SolutionResult.Skipped;
+                            break;
                         }
                     }
-                    await judgeTask(name);
-                    if (solution.status === "Judging" && !(solution.result.subtasks[name].status === "Accepted")) {
-                        solution.status = solution.result.subtasks[name].status;
-                    }
-                    await this.config.updateSolution(solution);
-                } catch (e) {
-                    solution.status = "Failed";
                 }
+                if (self.status === SolutionResult.Judging) {
+                    self = await judgeTask(name);
+                }
+                result[name] = self;
+                solution.score += self.score * subtasks[name].score / 100;
+                time += self.time;
+                memory = Math.max(memory, self.memory);
+                if (solution.status === SolutionResult.Judging && self.status !== SolutionResult.Accepted) {
+                    solution.status = self.status;
+                }
+                await this.config.updateSolution(solution);
             };
 
-            solution.result.subtasks = {};
-            solution.status = "Judging";
+            solution.status = SolutionResult.Judging;
             await this.config.updateSolution(solution);
 
-            solution.result.log += "Resolving subtasks\n";
+            solution.log = append(solution.log, "Resolving subtasks");
             for (const name in subtasks) {
                 if (subtasks[name].judged) { continue; }
                 await resolveSubtask(name);
             }
-            solution.result.score = 0;
-            solution.result.time = 0;
-            solution.result.memory = 0;
-            for (const name in subtasks) {
-                if (solution.result.subtasks[name]) {
-                    solution.result.score += solution.result.subtasks[name].score;
-                    if (solution.result.subtasks[name].time) {
-                        solution.result.time += solution.result.subtasks[name].time;
-                    }
-                    if (solution.result.subtasks[name].memory) {
-                        solution.result.memory += solution.result.subtasks[name].memory;
-                    }
-                    if (solution.status === "Judging" && solution.result.subtasks[name].status !== "Accepted") {
-                        solution.status = solution.result.subtasks[name].status;
-                    }
-                }
+            if (solution.status === SolutionResult.Judging) {
+                solution.status = SolutionResult.Accepted;
             }
-            if (solution.status === "Judging") {
-                solution.status = "Accepted";
-            }
-            solution.result.log += `Done at ${new Date()}`;
+            solution.log = append(solution.log, `Total: ${time} MS ${memory} KB`);
+            solution.log = append(solution.log, `Done at ${new Date()}`);
             await this.config.updateSolution(solution);
         } catch (e) {
-            solution.status = "Failed";
-            solution.result.log += e.message;
+            solution.status = SolutionResult.JudgementFailed;
+            solution.log = append(solution.log, e.message);
             await this.config.updateSolution(solution);
         }
     }

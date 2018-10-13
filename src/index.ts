@@ -1,5 +1,6 @@
-import { IJudgerConfig, IProblemModel, ISolutionModel, IPluginMapper } from "./interfaces";
+import { IJudgerConfig, IProblemModel, ISolutionModel, IPluginMapper, SolutionResult } from "./interfaces";
 import { Plugin } from "./base";
+import { append } from "./utils";
 
 const plugins: IPluginMapper = {};
 let config: IJudgerConfig = null;
@@ -21,14 +22,14 @@ export const judge = async (solutionID: string) => {
     let solution: ISolutionModel = null, problem: IProblemModel = null;
     try {
         solution = await config.resolveSolution(solutionID);
-        solution.result = {};
+        solution.log = "";
         problem = await config.resolveProblem(solution.problemID);
         if (!plugins.hasOwnProperty(problem.data.type)) throw new Error("Invalid data type");
         await plugins[problem.data.type].judge(solution, problem);
     } catch (e) {
         if (solution) {
-            solution.status = "Failed";
-            solution.result.log = e.message;
+            solution.status = SolutionResult.SystemError;
+            solution.log = append(solution.log, e.message);
             await config.updateSolution(solution);
         }
     }

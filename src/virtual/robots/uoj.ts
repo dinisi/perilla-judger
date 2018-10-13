@@ -1,7 +1,10 @@
-import { JSDOM } from "jsdom";
-import { Browser, launch, Page } from "puppeteer";
-import { agent, SuperAgent, SuperAgentRequest } from "superagent";
+/**
+ * @deprecated This crawer is very slow
+ */
+
+import { Browser, launch } from "puppeteer";
 import { Robot } from "./base";
+import { IRobotFetchResult } from "../interfaces";
 
 export default class UOJRobot extends Robot {
     private browser: Browser = null;
@@ -76,64 +79,65 @@ export default class UOJRobot extends Robot {
         }
     }
     public async fetch(originID: string) {
-        const url = `http://uoj.ac/submission/${originID}`;
-        const page = await this.browser.newPage();
-        try {
-            await page.goto(url);
-            const result = await page.evaluate(() => {
-                const tr = document.childNodes[1].childNodes[2].childNodes[1].childNodes[5].childNodes[1].childNodes[0].childNodes[1].childNodes[0];
-                return {
-                    originID: tr.childNodes[0].textContent,
-                    originProblem: tr.childNodes[1].textContent,
-                    originSubmitter: tr.childNodes[2].textContent,
-                    originStatus: tr.childNodes[3].textContent,
-                    time: tr.childNodes[4].textContent,
-                    memory: tr.childNodes[5].textContent,
-                    size: tr.childNodes[7].textContent,
-                    submitTime: tr.childNodes[8].textContent,
-                    judgeTime: tr.childNodes[9].textContent,
-                };
-            });
-            await page.close();
-            if (parseInt(result.originStatus, 10)) {
-                const score = parseInt(result.originStatus, 10);
-                return {
-                    result: {
-                        info: {
-                            runID: result.originID,
-                            remoteUser: result.originSubmitter,
-                            remoteProblem: result.originProblem,
-                            size: result.size,
-                            submitTime: result.submitTime,
-                            judgeTime: result.judgeTime,
-                        },
-                        time: result.time,
-                        memory: result.memory,
-                    },
-                    status: score === 100 ? "Accepted" : "Unacceptable",
-                    continuous: false,
-                };
-            } else {
-                return {
-                    result: {
-                        info: {
-                            runID: result.originID,
-                            remoteUser: result.originSubmitter,
-                            remoteProblem: result.originProblem,
-                            size: result.size,
-                            submitTime: result.submitTime,
-                            judgeTime: result.judgeTime,
-                        },
-                        time: result.time,
-                        memory: result.memory,
-                    },
-                    status: result.originStatus,
-                    continuous: !this.finalStatus.includes(result.originStatus),
-                };
-            }
-        } catch (e) {
-            await page.close();
-            throw e;
-        }
+        // const url = `http://uoj.ac/submission/${originID}`;
+        // const page = await this.browser.newPage();
+        // try {
+        //     await page.goto(url);
+        //     const result = await page.evaluate(() => {
+        //         const tr = document.childNodes[1].childNodes[2].childNodes[1].childNodes[5].childNodes[1].childNodes[0].childNodes[1].childNodes[0];
+        //         return {
+        //             originID: tr.childNodes[0].textContent,
+        //             originProblem: tr.childNodes[1].textContent,
+        //             originSubmitter: tr.childNodes[2].textContent,
+        //             originStatus: tr.childNodes[3].textContent,
+        //             time: tr.childNodes[4].textContent,
+        //             memory: tr.childNodes[5].textContent,
+        //             size: tr.childNodes[7].textContent,
+        //             submitTime: tr.childNodes[8].textContent,
+        //             judgeTime: tr.childNodes[9].textContent,
+        //         };
+        //     });
+        //     await page.close();
+        //     if (parseInt(result.originStatus, 10)) {
+        //         const score = parseInt(result.originStatus, 10);
+        //         return {
+        //             result: {
+        //                 info: {
+        //                     runID: result.originID,
+        //                     remoteUser: result.originSubmitter,
+        //                     remoteProblem: result.originProblem,
+        //                     size: result.size,
+        //                     submitTime: result.submitTime,
+        //                     judgeTime: result.judgeTime,
+        //                 },
+        //                 time: result.time,
+        //                 memory: result.memory,
+        //             },
+        //             status: score === 100 ? "Accepted" : "Unacceptable",
+        //             continuous: false,
+        //         };
+        //     } else {
+        //         return {
+        //             result: {
+        //                 info: {
+        //                     runID: result.originID,
+        //                     remoteUser: result.originSubmitter,
+        //                     remoteProblem: result.originProblem,
+        //                     size: result.size,
+        //                     submitTime: result.submitTime,
+        //                     judgeTime: result.judgeTime,
+        //                 },
+        //                 time: result.time,
+        //                 memory: result.memory,
+        //             },
+        //             status: result.originStatus,
+        //             continuous: !this.finalStatus.includes(result.originStatus),
+        //         };
+        //     }
+        // } catch (e) {
+        //     await page.close();
+        //     throw e;
+        // }
+        return null as IRobotFetchResult;
     }
 }

@@ -1,5 +1,21 @@
 import { Plugin } from "./base";
 
+export enum SolutionResult {
+    WaitingJudge,            // Wating Judge
+    Judging,                 // Judging
+    Skipped,                 // Skipped
+    Accepted,                // Accepted
+    WrongAnswer,             // Wrong Answer
+    TimeLimitExceeded,       // Time Limit Exceeded
+    MemoryLimitExceeded,     // Memory Limit Exceeded
+    RuntimeError,            // Runtime Error
+    CompileError,            // Compile Error
+    PresentationError,       // Presentation Error
+    JudgementFailed,         // Judgement Failed (Judge program error)
+    SystemError,             // System Error     (Judge framwork & Judge plugin error)
+    OtherError,              // Other Error
+}
+
 export interface IFileModel {
     _id: string;
     filename: string;
@@ -11,18 +27,16 @@ export interface IFileModel {
 }
 
 export interface ISolutionModel {
-    _id: string;
     problemID: string;
-    files: string[];
-    status: string;
-    result?: any;
-    meta?: any;
+    fileIDs: string[];
+    status: SolutionResult;
+    score: number;
+    log?: string;
 }
 
 export interface IProblemModel {
     files: string[];
     data: any;
-    meta?: any;
 }
 
 export interface IJudgerConfig {

@@ -1,10 +1,15 @@
 import { JSDOM } from "jsdom";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
 import { Robot } from "./base";
+import { IStatusMapper } from "../interfaces";
+import { SolutionResult } from "../../interfaces";
 
 export default class POJRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
     private continuesStatus = ["Queuing", "Compiling", "Running", "Waiting"];
+    private statusMap: IStatusMapper = {
+        "Queuing": SolutionResult.Judging
+    };
     public constructor(username: string, password: string) {
         super(username, password);
     }
@@ -66,21 +71,16 @@ export default class POJRobot extends Robot {
         const dom = new JSDOM(result.text);
         const resultTable = dom.window.document.querySelector('table[cellspacing="0"][cellpadding="0"][width="100%"][border="1"][class="a"][bordercolor="#FFFFFF"]');
         const resultRow = resultTable.querySelector('tr[align="center"]');
-        const status = resultRow.childNodes[3].textContent;
+        const statusText = resultRow.childNodes[3].textContent;
+        let info = [
+            `Fetch result at ${new Date()}`,
+            `RunID: ${resultRow.childNodes[0].textContent}, RemoteUser: ${resultRow.childNodes[1].textContent}`,
+            `Time: ${resultRow.childNodes[5].textContent} Memory: ${resultRow.childNodes[4].textContent}`
+        ].join('\n');
         return {
-            result: {
-                info: {
-                    runID: resultRow.childNodes[0].textContent,
-                    remoteUser: resultRow.childNodes[1].textContent,
-                    remoteProblem: resultRow.childNodes[2].textContent,
-                    size: resultRow.childNodes[7].textContent,
-                    submitTime: resultRow.childNodes[8].textContent,
-                },
-                memory: resultRow.childNodes[4].textContent,
-                time: resultRow.childNodes[5].textContent,
-            },
-            status,
-            continuous: this.continuesStatus.includes(status),
+            log: info,
+            status: this.statusMap[statusText],
+            continuous: this.continuesStatus.includes(statusText),
         };
     }
 }

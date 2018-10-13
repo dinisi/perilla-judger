@@ -1,10 +1,15 @@
 import { JSDOM } from "jsdom";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
 import { Robot } from "./base";
+import { SolutionResult } from "../../interfaces";
+import { IStatusMapper } from "../interfaces";
 
 export default class LYDSYRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
     private continuesStatus = ["Pending", "Pending_Rejudging", "Compiling", "Running_&_Judging", "Waiting"];
+    private statusMap: IStatusMapper = {
+        "Pending": SolutionResult.Judging
+    };
     public constructor(username: string, password: string) {
         super(username, password);
     }
@@ -58,21 +63,16 @@ export default class LYDSYRobot extends Robot {
         const dom = new JSDOM(result.text);
         const resultTable = dom.window.document.querySelector('table[align="center"]');
         const resultRow = resultTable.querySelector('tr[align="center"]');
-        const status = resultRow.childNodes[3].textContent;
+        const statusText = resultRow.childNodes[3].textContent;
+        let info = [
+            `Fetch result at ${new Date()}`,
+            `RunID: ${resultRow.childNodes[0].textContent}, RemoteUser: ${resultRow.childNodes[1].textContent}`,
+            `Time: ${resultRow.childNodes[5].textContent} Memory: ${resultRow.childNodes[4].textContent}`
+        ].join('\n');
         return {
-            result: {
-                info: {
-                    runID: resultRow.childNodes[0].textContent,
-                    remoteUser: resultRow.childNodes[1].textContent,
-                    remoteProblem: resultRow.childNodes[2].textContent,
-                    size: resultRow.childNodes[7].textContent,
-                    submitTime: resultRow.childNodes[8].textContent,
-                },
-                memory: resultRow.childNodes[4].textContent,
-                time: resultRow.childNodes[5].textContent,
-            },
-            status,
-            continuous: this.continuesStatus.includes(status),
+            log: info,
+            status: this.statusMap[statusText],
+            continuous: this.continuesStatus.includes(statusText),
         };
     }
 }

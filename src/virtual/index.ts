@@ -1,9 +1,10 @@
 import { readFileSync } from "fs-extra";
 import { parse } from "path";
-import { IProblemModel, ISolutionModel, IJudgerConfig } from "../interfaces";
+import { IProblemModel, ISolutionModel, IJudgerConfig, SolutionResult } from "../interfaces";
 import { Robot } from "./robots/base";
 import { Plugin } from "../base";
 import { IRobotMapper } from "./interfaces";
+import { append } from "../utils";
 
 export default class VirtualPlugin extends Plugin {
     protected robots: IRobotMapper = {};
@@ -25,7 +26,7 @@ export default class VirtualPlugin extends Plugin {
     protected async watch(robot: Robot, solution: ISolutionModel, originID: string, time: number) {
         robot.fetch(originID).then(async (result) => {
             solution.status = result.status;
-            solution.result = result.result;
+            solution.log = append(solution.log, result.log);
             await this.config.updateSolution(solution);
             if (result.continuous && time > 0) {
                 setTimeout(() => this.watch(robot, solution, originID, time - 1), 5000);
@@ -34,9 +35,9 @@ export default class VirtualPlugin extends Plugin {
     }
     public async judge(solution: ISolutionModel, problem: IProblemModel) {
         try {
-            solution.status = "Initialized";
-            if (solution.files.length !== 1) { throw new Error("Invalid submission"); }
-            const resolvedFile = await this.config.resolveFile(solution.files[0]);
+            solution.status = SolutionResult.Judging;
+            if (solution.fileIDs.length !== 1) { throw new Error("Invalid submission"); }
+            const resolvedFile = await this.config.resolveFile(solution.fileIDs[0]);
             // 1MB
             if (resolvedFile.size > 1024 * 1024) { throw new Error("Solution too big"); }
             const code = readFileSync(resolvedFile.path).toString();
@@ -47,8 +48,8 @@ export default class VirtualPlugin extends Plugin {
             const originID = await this.robots[problem.data.origin].submit(problem.data.problemID, code, ext);
             this.watch(this.robots[problem.data.origin], solution, originID, 100);
         } catch (e) {
-            solution.status = "Failed";
-            solution.result.log = e.message;
+            solution.status = SolutionResult.JudgementFailed;
+            solution.log = append(solution.log, e.message);
             await this.config.updateSolution(solution);
         }
     }
