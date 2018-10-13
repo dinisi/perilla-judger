@@ -16,7 +16,7 @@ export default class VirtualPlugin extends Plugin {
             this.robots[robot.getName()] = robot;
         }
     }
-    public getType() { return "virtual"; }
+    public getChannels() { return ["virtual"]; }
     public async initialize(config: IJudgerConfig) {
         this.config = config;
         for (const robotName in this.robots) {

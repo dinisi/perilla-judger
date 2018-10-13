@@ -18,9 +18,9 @@ export default class DirectPlugin extends Plugin {
     public async initialize(config: IJudgerConfig) {
         this.config = config;
     }
-    public getType() { return "direct"; }
+    public getChannels() { return ["direct"]; }
     public async judge(solution: ISolutionModel, problem: IProblemModel) {
-        const log = (str:string) => {
+        const log = (str: string) => {
             solution.log = append(solution.log, str);
         }
         try {
@@ -36,8 +36,8 @@ export default class DirectPlugin extends Plugin {
             const data = problem.data as IDataConfig;
 
             log("Compiling judger");
-            if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
-            const resolvedJudger = await this.config.resolveFile(problem.files[data.judgerFile]);
+            if (!problem.fileIDs[data.judgerFile]) throw new Error("Invalid data config");
+            const resolvedJudger = await this.config.resolveFile(problem.fileIDs[data.judgerFile]);
             const judgerCompileResult = await compile(this.config, resolvedJudger);
             log(judgerCompileResult.output);
             if (!judgerCompileResult.success) throw new Error("Judger Compile Error");
@@ -53,8 +53,8 @@ export default class DirectPlugin extends Plugin {
             for (const testcase of data.testcases) {
                 if (!solution.fileIDs[testcase.fileIndex]) { throw new Error("Invalid solution"); }
                 const user = (await this.config.resolveFile(solution.fileIDs[testcase.fileIndex])).path;
-                if (!problem.files[testcase.extraFile]) throw new Error("Invalid data config");
-                const extra = (await this.config.resolveFile(problem.files[testcase.extraFile])).path;
+                if (!problem.fileIDs[testcase.extraFile]) throw new Error("Invalid data config");
+                const extra = (await this.config.resolveFile(problem.fileIDs[testcase.extraFile])).path;
                 const runDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/exec/run"));
                 ensureDirSync(runDir);
                 emptyDirSync(runDir);

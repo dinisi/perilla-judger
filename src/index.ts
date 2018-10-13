@@ -5,10 +5,13 @@ import { append } from "./utils";
 const plugins: IPluginMapper = {};
 let config: IJudgerConfig = null;
 export const registerPlugin = (plugin: Plugin) => {
-    if (plugins.hasOwnProperty(plugin.getType())) {
-        throw new Error("Plugin already registered");
+    let channels = plugin.getChannels();
+    for (let channel in channels) {
+        if (plugins.hasOwnProperty(channel)) {
+            throw new Error("Plugin already registered");
+        }
+        plugins[channel] = plugin;
     }
-    plugins[plugin.getType()] = plugin;
 }
 
 export const initialize = async (_config: IJudgerConfig) => {
@@ -18,14 +21,14 @@ export const initialize = async (_config: IJudgerConfig) => {
     }
 };
 
-export const judge = async (solutionID: string) => {
+export const judge = async (solutionID: string, channel: string) => {
     let solution: ISolutionModel = null, problem: IProblemModel = null;
     try {
         solution = await config.resolveSolution(solutionID);
         solution.log = "";
         problem = await config.resolveProblem(solution.problemID);
-        if (!plugins.hasOwnProperty(problem.data.type)) throw new Error("Invalid data type");
-        await plugins[problem.data.type].judge(solution, problem);
+        if (!plugins.hasOwnProperty(channel)) throw new Error("Invalid data type");
+        await plugins[channel].judge(solution, problem);
     } catch (e) {
         if (solution) {
             solution.status = SolutionResult.SystemError;

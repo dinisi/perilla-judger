@@ -35,7 +35,7 @@ export interface ISolutionModel {
 }
 
 export interface IProblemModel {
-    files: string[];
+    fileIDs: string[];
     data: any;
 }
 

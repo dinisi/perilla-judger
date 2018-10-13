@@ -18,7 +18,7 @@ export default class TraditionalPlugin extends Plugin {
     public async initialize(config: IJudgerConfig): Promise<void> {
         this.config = config;
     }
-    public getType() { return "traditional"; }
+    public getChannels() { return ["traditional"]; }
     public async judge(solution: ISolutionModel, problem: IProblemModel): Promise<void> {
         try {
             solution.status = SolutionResult.Judging;
@@ -35,8 +35,8 @@ export default class TraditionalPlugin extends Plugin {
             emptyDirSync(judgerDir);
 
             solution.log = append(solution.log, "Compiling judger...");
-            if (!problem.files[data.judgerFile]) throw new Error("Invalid data config");
-            const resolvedJudger = await this.config.resolveFile(problem.files[data.judgerFile]);
+            if (!problem.fileIDs[data.judgerFile]) throw new Error("Invalid data config");
+            const resolvedJudger = await this.config.resolveFile(problem.fileIDs[data.judgerFile]);
             const judgerCompileResult = await compile(this.config, resolvedJudger);
             solution.log = append(solution.log, judgerCompileResult.output);
             if (!judgerCompileResult.success) throw new Error("Judger Compile Error");
@@ -75,10 +75,10 @@ export default class TraditionalPlugin extends Plugin {
                 let time = 0;
                 let memory = 0;
                 try {
-                    if (!problem.files[inputID] || !problem.files[outputID]) throw new Error("Invalid data config");
+                    if (!problem.fileIDs[inputID] || !problem.fileIDs[outputID]) throw new Error("Invalid data config");
                     // 获取文件
-                    const input = (await this.config.resolveFile(problem.files[inputID])).path;
-                    const output = (await this.config.resolveFile(problem.files[outputID])).path;
+                    const input = (await this.config.resolveFile(problem.fileIDs[inputID])).path;
+                    const output = (await this.config.resolveFile(problem.fileIDs[outputID])).path;
                     solution.log = append(solution.log, "input:");
                     solution.log = append(solution.log, shortRead(input));
                     solution.log = append(solution.log, "output:");
