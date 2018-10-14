@@ -3,8 +3,8 @@
  */
 
 import { Browser, launch } from "puppeteer";
-import { Robot } from "./base";
 import { IRobotFetchResult } from "../interfaces";
+import { Robot } from "./base";
 
 export default class UOJRobot extends Robot {
     private browser: Browser = null;

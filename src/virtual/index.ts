@@ -1,37 +1,28 @@
 import { readFileSync } from "fs-extra";
 import { parse } from "path";
-import { IProblemModel, ISolutionModel, IJudgerConfig, SolutionResult } from "../interfaces";
-import { Robot } from "./robots/base";
 import { Plugin } from "../base";
-import { IRobotMapper } from "./interfaces";
+import { IJudgerConfig, IProblemModel, ISolutionModel, SolutionResult } from "../interfaces";
 import { append } from "../utils";
+import { IRobotMapper } from "./interfaces";
+import { Robot } from "./robots/base";
 
 export default class VirtualPlugin extends Plugin {
     protected robots: IRobotMapper = {};
     protected config: IJudgerConfig = null;
     public constructor(robots: Robot[]) {
         super();
-        for (let robot of robots) {
-            if (this.robots.hasOwnProperty(robot.getName())) throw new Error("Robot name duplicated");
+        for (const robot of robots) {
+            if (this.robots.hasOwnProperty(robot.getName())) { throw new Error("Robot name duplicated"); }
             this.robots[robot.getName()] = robot;
         }
     }
     public getChannels() { return ["virtual"]; }
     public async initialize(config: IJudgerConfig) {
         this.config = config;
+        // tslint:disable-next-line:forin
         for (const robotName in this.robots) {
             await this.robots[robotName].initialize();
         }
-    }
-    protected async watch(robot: Robot, solution: ISolutionModel, originID: string, time: number) {
-        robot.fetch(originID).then(async (result) => {
-            solution.status = result.status;
-            solution.log = append(solution.log, result.log);
-            await this.config.updateSolution(solution);
-            if (result.continuous && time > 0) {
-                setTimeout(() => this.watch(robot, solution, originID, time - 1), 5000);
-            }
-        });
     }
     public async judge(solution: ISolutionModel, problem: IProblemModel) {
         try {
@@ -52,5 +43,15 @@ export default class VirtualPlugin extends Plugin {
             solution.log = append(solution.log, e.message);
             await this.config.updateSolution(solution);
         }
+    }
+    protected async watch(robot: Robot, solution: ISolutionModel, originID: string, time: number) {
+        robot.fetch(originID).then(async (result) => {
+            solution.status = result.status;
+            solution.log = append(solution.log, result.log);
+            await this.config.updateSolution(solution);
+            if (result.continuous && time > 0) {
+                setTimeout(() => this.watch(robot, solution, originID, time - 1), 5000);
+            }
+        });
     }
 }

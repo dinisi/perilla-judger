@@ -1,5 +1,5 @@
-import { Robot } from "./robots/base";
 import { SolutionResult } from "../interfaces";
+import { Robot } from "./robots/base";
 
 export interface IDataConfig {
     origin: string;
@@ -17,5 +17,5 @@ export interface IRobotMapper {
 }
 
 export interface IStatusMapper {
-    [key: string]: SolutionResult
+    [key: string]: SolutionResult;
 }

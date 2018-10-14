@@ -1,14 +1,14 @@
 import { JSDOM } from "jsdom";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
-import { Robot } from "./base";
-import { IStatusMapper } from "../interfaces";
 import { SolutionResult } from "../../interfaces";
+import { IStatusMapper } from "../interfaces";
+import { Robot } from "./base";
 
 export default class POJRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
     private continuesStatus = ["Queuing", "Compiling", "Running", "Waiting"];
     private statusMap: IStatusMapper = {
-        "Queuing": SolutionResult.Judging
+        Queuing: SolutionResult.Judging,
     };
     public constructor(username: string, password: string) {
         super(username, password);
@@ -72,11 +72,11 @@ export default class POJRobot extends Robot {
         const resultTable = dom.window.document.querySelector('table[cellspacing="0"][cellpadding="0"][width="100%"][border="1"][class="a"][bordercolor="#FFFFFF"]');
         const resultRow = resultTable.querySelector('tr[align="center"]');
         const statusText = resultRow.childNodes[3].textContent;
-        let info = [
+        const info = [
             `Fetch result at ${new Date()}`,
             `RunID: ${resultRow.childNodes[0].textContent}, RemoteUser: ${resultRow.childNodes[1].textContent}`,
-            `Time: ${resultRow.childNodes[5].textContent} Memory: ${resultRow.childNodes[4].textContent}`
-        ].join('\n');
+            `Time: ${resultRow.childNodes[5].textContent} Memory: ${resultRow.childNodes[4].textContent}`,
+        ].join("\n");
         return {
             log: info,
             status: this.statusMap[statusText],

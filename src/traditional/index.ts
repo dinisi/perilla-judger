@@ -2,13 +2,13 @@ import { copyFileSync, copySync, emptyDirSync, ensureDirSync, existsSync } from 
 import { join, parse, resolve } from "path";
 import { startSandbox } from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
+import { Plugin } from "../base";
 import { compile } from "../compile";
 import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel, SolutionResult } from "../interfaces";
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
-import { IDataConfig, ISubtask } from "./interfaces";
-import { Plugin } from "../base";
 import { append, convertStatus } from "../utils";
+import { IDataConfig, ISubtask } from "./interfaces";
 
 const solutionDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/solution/"));
 const judgerDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/traditional/judger/"));
@@ -35,11 +35,11 @@ export default class TraditionalPlugin extends Plugin {
             emptyDirSync(judgerDir);
 
             solution.log = append(solution.log, "Compiling judger...");
-            if (!problem.fileIDs[data.judgerFile]) throw new Error("Invalid data config");
+            if (!problem.fileIDs[data.judgerFile]) { throw new Error("Invalid data config"); }
             const resolvedJudger = await this.config.resolveFile(problem.fileIDs[data.judgerFile]);
             const judgerCompileResult = await compile(this.config, resolvedJudger);
             solution.log = append(solution.log, judgerCompileResult.output);
-            if (!judgerCompileResult.success) throw new Error("Judger Compile Error");
+            if (!judgerCompileResult.success) { throw new Error("Judger Compile Error"); }
             const judgerExt = parse(resolvedJudger.filename).ext;
             if (!judgerExt) { throw new Error("Invalid judger file"); }
             const judgerLanguageInfo = getLanguageInfo(judgerExt.substr(1, judgerExt.length - 1)) as ILanguageInfo;
@@ -72,10 +72,12 @@ export default class TraditionalPlugin extends Plugin {
                 solution.log = append(solution.log, `// Judging [${inputID}-${outputID}]`);
                 let status = SolutionResult.Judging;
                 let score = 0;
+                // tslint:disable-next-line:no-shadowed-variable
                 let time = 0;
+                // tslint:disable-next-line:no-shadowed-variable
                 let memory = 0;
                 try {
-                    if (!problem.fileIDs[inputID] || !problem.fileIDs[outputID]) throw new Error("Invalid data config");
+                    if (!problem.fileIDs[inputID] || !problem.fileIDs[outputID]) { throw new Error("Invalid data config"); }
                     // 获取文件
                     const input = (await this.config.resolveFile(problem.fileIDs[inputID])).path;
                     const output = (await this.config.resolveFile(problem.fileIDs[outputID])).path;
@@ -212,14 +214,16 @@ export default class TraditionalPlugin extends Plugin {
                 const tasks = subtasks[name] as ISubtask;
                 let status = SolutionResult.Judging;
                 let score = 0;
+                // tslint:disable-next-line:no-shadowed-variable
                 let time = 0;
+                // tslint:disable-next-line:no-shadowed-variable
                 let memory = 0;
                 try {
                     const scorePerCase = 100 / tasks.testcases.length;
-                    for (const i in tasks.testcases) {
-                        const test = tasks.testcases[i];
-                        solution.log = append(solution.log, "Judging task")
-                        const result = await judgeTest(test.input, test.output, tasks.timeLimit, tasks.memoryLimit);
+                    for (const testcase of tasks.testcases) {
+                        solution.log = append(solution.log, "Judging task");
+                        // tslint:disable-next-line:no-shadowed-variable
+                        const result = await judgeTest(testcase.input, testcase.output, tasks.timeLimit, tasks.memoryLimit);
                         time += result.time;
                         memory = Math.max(memory, result.memory);
                         score += result.score * scorePerCase / 100;
@@ -235,7 +239,7 @@ export default class TraditionalPlugin extends Plugin {
                 return { status, score, time, memory };
             };
 
-            let result: any = {};
+            const result: any = {};
             let time = 0;
             let memory = 0;
             const resolveSubtask = async (name: string) => {
@@ -292,4 +296,4 @@ export default class TraditionalPlugin extends Plugin {
             await this.config.updateSolution(solution);
         }
     }
-};
+}

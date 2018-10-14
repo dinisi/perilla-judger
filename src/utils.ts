@@ -3,7 +3,7 @@ import { SolutionResult } from "./interfaces";
 
 export const append = (origin: string, str: string) => {
     return origin.endsWith("\n") ? origin + str : origin + "\n" + str;
-}
+};
 
 export const convertStatus = (origin: SandboxStatus) => {
     switch (origin) {
@@ -22,4 +22,4 @@ export const convertStatus = (origin: SandboxStatus) => {
         case SandboxStatus.Unknown:
             return SolutionResult.JudgementFailed;
     }
-}
+};

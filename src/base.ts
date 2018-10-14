@@ -1,4 +1,4 @@
-import { IJudgerConfig, ISolutionModel, IProblemModel } from "./interfaces";
+import { IJudgerConfig, IProblemModel, ISolutionModel } from "./interfaces";
 
 export abstract class Plugin {
     public abstract getChannels(): string[];

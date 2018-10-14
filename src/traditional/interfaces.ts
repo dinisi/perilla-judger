@@ -1,5 +1,3 @@
-import { SolutionResult } from "../interfaces";
-
 export interface ITestcase {
     input: number;
     output: number;

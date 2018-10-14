@@ -1,14 +1,14 @@
 import { JSDOM } from "jsdom";
 import { agent, SuperAgent, SuperAgentRequest } from "superagent";
-import { Robot } from "./base";
 import { SolutionResult } from "../../interfaces";
 import { IStatusMapper } from "../interfaces";
+import { Robot } from "./base";
 
 export default class LYDSYRobot extends Robot {
     private agent: SuperAgent<SuperAgentRequest> = null;
     private continuesStatus = ["Pending", "Pending_Rejudging", "Compiling", "Running_&_Judging", "Waiting"];
     private statusMap: IStatusMapper = {
-        "Pending": SolutionResult.Judging
+        Pending: SolutionResult.Judging,
     };
     public constructor(username: string, password: string) {
         super(username, password);
@@ -64,11 +64,11 @@ export default class LYDSYRobot extends Robot {
         const resultTable = dom.window.document.querySelector('table[align="center"]');
         const resultRow = resultTable.querySelector('tr[align="center"]');
         const statusText = resultRow.childNodes[3].textContent;
-        let info = [
+        const info = [
             `Fetch result at ${new Date()}`,
             `RunID: ${resultRow.childNodes[0].textContent}, RemoteUser: ${resultRow.childNodes[1].textContent}`,
-            `Time: ${resultRow.childNodes[5].textContent} Memory: ${resultRow.childNodes[4].textContent}`
-        ].join('\n');
+            `Time: ${resultRow.childNodes[5].textContent} Memory: ${resultRow.childNodes[4].textContent}`,
+        ].join("\n");
         return {
             log: info,
             status: this.statusMap[statusText],

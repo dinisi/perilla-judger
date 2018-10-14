@@ -26,6 +26,8 @@
         "@types/fs-extra": "^5.0.4",
         "@types/randomstring": "^1.1.6",
         "@types/redis": "^2.8.6",
-        "@types/request": "^2.47.1"
+        "@types/request": "^2.47.1",
+        "tslint": "^5.11.0",
+        "typescript": "^3.1.3"
     }
 }

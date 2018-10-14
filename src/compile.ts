@@ -2,7 +2,7 @@ import { copyFileSync, emptyDirSync, ensureDirSync, existsSync, pathExists, read
 import { join, parse, resolve } from "path";
 import * as sandbox from "simple-sandbox";
 import { SandboxParameter, SandboxStatus } from "simple-sandbox/lib/interfaces";
-import { ILanguageInfo, IFileModel } from "./interfaces";
+import { IFileModel, ILanguageInfo } from "./interfaces";
 import { ICompileResult, IJudgerConfig } from "./interfaces";
 import { getLanguageInfo } from "./language";
 import { shortRead } from "./shortRead";
