@@ -17,6 +17,7 @@ const config = {
     resolveProblem: problem.getProblem,
     resolveFile: file.getFile
 };
+const REDIS_PERFIX = "PERILLA";
 
 (async () => {
     await http.initialize("https://perilla.example.com", "username", "password");
@@ -33,17 +34,19 @@ const config = {
     // Please notice that VirtualPlugin constructor need a list of Robots
     // see src/virtual/robots for details
     // 注意VirtualPlugin初始化需要传入一个Robot列表
-    const virtual = require("./dist/virtual").default;
-    const POJRobot = require("./dist/virtual/robots/poj").default;
-    perillaJudger.registerPlugin(new virtual([
-        // new POJRobot("zhangzisu_develop", "123456")
-    ]));
+    // const virtual = require("./dist/virtual").default;
+    // const POJRobot = require("./dist/virtual/robots/poj").default;
+    // perillaJudger.registerPlugin(new virtual([
+    //     new POJRobot("zhangzisu_develop", "123456")
+    // ]));
     // Initialize perillaJudger
     await perillaJudger.initialize(config);
-    while (true) {
-        const solutionID = (await instance.brpopAsync("judgeTask", 300))[1];
+    const channels = perillaJudger.getChannels();
+    for (let index = 0; ; index = (index + 1) % channels.length) {
+        const channel = channels[index];
+        const solutionID = (await instance.brpopAsync(`${REDIS_PERFIX}_JQ_${channel}`, 300))[1];
         if (solutionID) {
-            await perillaJudger.judge(solutionID);
+            await perillaJudger.judge(solutionID, channel);
         }
     }
 })();
