@@ -1,5 +1,7 @@
 import { Plugin } from "./base";
 
+export type IUpdateCallback = (solution: ISolution, id: string) => Promise<void>;
+
 export enum SolutionResult {
     WaitingJudge,            // Wating Judge
     Judging,                 // Judging
@@ -16,36 +18,34 @@ export enum SolutionResult {
     OtherError,              // Other Error
 }
 
-export interface IFileModel {
-    _id: string;
-    filename: string;
-    description: string;
-    hash: string;
-    size: number;
+export interface IFile {
     path: string;
-    created: Date;
+    type: string;
 }
 
-export interface ISolutionModel {
-    problemID: string;
-    fileIDs: string[];
+export interface IUnsolvedTask {
+    solutionID: string;
+    solutionFiles: string[];
+    problemFiles: string[];
+    data?: any;
+}
+
+export interface ITask {
+    solutionID: string;
+    solutionFiles: IFile[];
+    problemFiles: IFile[];
+    data?: any;
+}
+
+export interface ISolution {
     status: SolutionResult;
     score: number;
     log?: string;
 }
 
-export interface IProblemModel {
-    fileIDs: string[];
-    data: any;
-}
-
 export interface IJudgerConfig {
     cgroup: string;
     chroot: string;
-    resolveFile(fileID: string): Promise<IFileModel>;
-    resolveSolution(solutionID: string): Promise<ISolutionModel>;
-    updateSolution(solution: ISolutionModel): Promise<void>;
-    resolveProblem(problemID: string): Promise<IProblemModel>;
 }
 
 export interface ICompileResult {

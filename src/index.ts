@@ -1,6 +1,5 @@
 import { Plugin } from "./base";
-import { IJudgerConfig, IPluginMapper, IProblemModel, ISolutionModel, SolutionResult } from "./interfaces";
-import { append } from "./utils";
+import { IJudgerConfig, IPluginMapper, ITask, IUpdateCallback } from "./interfaces";
 
 let config: IJudgerConfig = null;
 const plugins: Plugin[] = [];
@@ -26,21 +25,13 @@ export const initialize = async (_config: IJudgerConfig) => {
     }
 };
 
-export const judge = async (solutionID: string, channel: string) => {
-    let solution: ISolutionModel = null;
-    let problem: IProblemModel = null;
+export const judge = async (task: ITask, channel: string, callback: IUpdateCallback) => {
     try {
-        solution = await config.resolveSolution(solutionID);
-        solution.log = "";
-        problem = await config.resolveProblem(solution.problemID);
         if (!mapper[channel]) { throw new Error("Invalid data type"); }
-        await mapper[channel].judge(solution, problem);
+        await mapper[channel].judge(task, callback);
     } catch (e) {
-        if (solution) {
-            solution.status = SolutionResult.SystemError;
-            solution.log = append(solution.log, e.message);
-            await config.updateSolution(solution);
-        }
+        // tslint:disable-next-line:no-console
+        console.log(e);
     }
 };
 

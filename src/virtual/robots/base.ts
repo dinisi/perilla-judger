@@ -1,4 +1,7 @@
+import { IFile, ISolution, IUpdateCallback } from "../../interfaces";
 import { IRobotFetchResult } from "../interfaces";
+
+type updateCallback = (solution: ISolution) => Promise<void>;
 
 export abstract class Robot {
     protected username: string;
@@ -10,6 +13,6 @@ export abstract class Robot {
     public abstract getName(): string;
     public abstract isLoggedIn(): Promise<boolean>;
     public abstract initialize(): Promise<void>;
-    public abstract submit(problemID: string, code: string, language: string): Promise<string>;
+    public abstract submit(problemID: string, file: IFile, callback: updateCallback): Promise<string>;
     public abstract fetch(originID: string): Promise<IRobotFetchResult>;
 }

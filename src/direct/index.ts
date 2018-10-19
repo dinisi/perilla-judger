@@ -4,7 +4,7 @@ import { startSandbox } from "simple-sandbox";
 import { SandboxParameter } from "simple-sandbox/lib/interfaces";
 import { Plugin } from "../base";
 import { compile } from "../compile";
-import { IJudgerConfig, ILanguageInfo, IProblemModel, ISolutionModel, SolutionResult } from "../interfaces";
+import { IJudgerConfig, ILanguageInfo, ISolution, ITask, IUpdateCallback, SolutionResult } from "../interfaces";
 import { getLanguageInfo } from "../language";
 import { shortRead } from "../shortRead";
 import { append } from "../utils";
@@ -19,12 +19,16 @@ export default class DirectPlugin extends Plugin {
         this.config = config;
     }
     public getChannels() { return ["direct"]; }
-    public async judge(solution: ISolutionModel, problem: IProblemModel) {
+    public async judge(task: ITask, callback: IUpdateCallback) {
+        const solution: ISolution = {
+            status: SolutionResult.Judging,
+            score: 0,
+            log: `Initialized at ${new Date()}`,
+        };
         const log = (str: string) => {
             solution.log = append(solution.log, str);
         };
         try {
-
             solution.status = SolutionResult.Judging;
             solution.score = 0;
             log(`Initialized at ${new Date()}`);
@@ -32,18 +36,16 @@ export default class DirectPlugin extends Plugin {
             emptyDirSync(solutionPath);
             ensureDirSync(judgerDir);
             emptyDirSync(judgerDir);
-            await this.config.updateSolution(solution);
-            const data = problem.data as IDataConfig;
+            await callback(solution, task.solutionID);
+            const data = task.data as IDataConfig;
 
             log("Compiling judger");
-            if (!problem.fileIDs[data.judgerFile]) { throw new Error("Invalid data config"); }
-            const resolvedJudger = await this.config.resolveFile(problem.fileIDs[data.judgerFile]);
-            const judgerCompileResult = await compile(this.config, resolvedJudger);
+            if (!task.problemFiles[data.judgerFile]) { throw new Error("Invalid data config"); }
+            const judger = task.problemFiles[data.judgerFile];
+            const judgerCompileResult = await compile(this.config, judger);
             log(judgerCompileResult.output);
             if (!judgerCompileResult.success) { throw new Error("Judger Compile Error"); }
-            const ext = parse(resolvedJudger.filename).ext;
-            if (!ext) { throw new Error("Invalid judger file"); }
-            const judgerLanguageInfo = getLanguageInfo(ext.substr(1, ext.length - 1)) as ILanguageInfo;
+            const judgerLanguageInfo = getLanguageInfo(judger);
             const judgerExecFile = join(judgerDir, judgerLanguageInfo.compiledFilename);
             copySync(judgerCompileResult.execFile, judgerExecFile);
 
@@ -51,10 +53,10 @@ export default class DirectPlugin extends Plugin {
             solution.status = SolutionResult.Judging;
             const scorePerCase = 100 / data.testcases.length;
             for (const testcase of data.testcases) {
-                if (!solution.fileIDs[testcase.fileIndex]) { throw new Error("Invalid solution"); }
-                const user = (await this.config.resolveFile(solution.fileIDs[testcase.fileIndex])).path;
-                if (!problem.fileIDs[testcase.extraFile]) { throw new Error("Invalid data config"); }
-                const extra = (await this.config.resolveFile(problem.fileIDs[testcase.extraFile])).path;
+                if (!task.solutionFiles[testcase.fileIndex]) { throw new Error("Invalid solution"); }
+                const user = task.solutionFiles[testcase.fileIndex].path;
+                if (!task.problemFiles[testcase.extraFile]) { throw new Error("Invalid data config"); }
+                const extra = task.problemFiles[testcase.extraFile].path;
                 const runDir = resolve(join(process.env.TMP_DIR || "tmp", "judge/direct/exec/run"));
                 ensureDirSync(runDir);
                 emptyDirSync(runDir);
@@ -99,11 +101,11 @@ export default class DirectPlugin extends Plugin {
                 solution.status = SolutionResult.Accepted;
             }
             log(`Done at ${new Date()}`);
-            await this.config.updateSolution(solution);
+            await callback(solution, task.solutionID);
         } catch (e) {
             solution.status = SolutionResult.JudgementFailed;
             log(e.message);
-            await this.config.updateSolution(solution);
+            await callback(solution, task.solutionID);
         }
     }
 }
