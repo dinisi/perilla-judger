@@ -14,7 +14,7 @@ export const compile = async (config: IJudgerConfig, file: IFile): Promise<IComp
         const source = file.path;
         ensureDirSync(compileDir);
         emptyDirSync(compileDir);
-        const info = getLanguageInfo(file.type) as ILanguageInfo;
+        const info = getLanguageInfo(file);
 
         if (info.requireCompile) {
             copyFileSync(source, join(compileDir, info.sourceFilename));

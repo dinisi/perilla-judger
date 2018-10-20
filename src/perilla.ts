@@ -1,26 +1,26 @@
 // tslint:disable:no-console
 import { promisifyAll } from "bluebird";
 import * as cluster from "cluster";
-import { emptyDirSync, ensureDirSync } from "fs-extra";
+import { emptyDirSync, ensureDirSync, readFileSync } from "fs-extra";
 import { join } from "path";
 import redis = require("redis");
+import * as perillaJudger from ".";
 import { getFile } from "./file";
 import * as http from "./http";
-import { IJudgerConfig, ISolution, ITask, IUnsolvedTask, IFile } from "./interfaces";
+import { IFile, IJudgerConfig, ISolution, ITask, IUnsolvedTask } from "./interfaces";
 import { updateSolution } from "./solution";
-import * as perillaJudger from ".";
 type messageType = "log" | "file" | "solution";
 interface IRPCMessage {
-    type: messageType,
-    payload: any
-};
-
-const PERILLA_SERVER = "http://example.com";
-const PERILLA_USER = "username";
-const PERILLA_PASS = "password";
-const CHROOT_PATH = "/path/to/chroot";
+    type: messageType;
+    payload: any;
+}
 
 if (cluster.isMaster) {
+    const config = JSON.parse(readFileSync("config.json").toString());
+    const PERILLA_SERVER = config.server;
+    const PERILLA_USER = config.user;
+    const PERILLA_PASS = config.pass;
+    const CHROOT_PATH = config.chroot;
     http.initialize(PERILLA_SERVER, PERILLA_USER, PERILLA_PASS).then(() => {
         const TMPPrefix = "tmp";
         const cpuCount = require("os").cpus().length;
@@ -32,6 +32,7 @@ if (cluster.isMaster) {
             const worker = cluster.fork({
                 WORKER_ID: i,
                 TMP_DIR: TMP,
+                CHROOT_PATH,
             });
             const sendMsg = (type: messageType, payload: any) => {
                 worker.send(JSON.stringify({ type, payload }));
@@ -79,13 +80,13 @@ if (cluster.isMaster) {
             RequestCount++;
         });
     };
-    const updateSolution = (solution: ISolution, id: string) => {
+    const callback = (solution: ISolution, id: string) => {
         return new Promise<void>((resolve, reject) => {
             Resolvers[RequestCount] = { resolve, reject };
             sendMsg("solution", { id, solution, requestID: RequestCount });
             RequestCount++;
         });
-    }
+    };
     process.on("message", (message) => {
         const parsed = JSON.parse(message) as IRPCMessage;
         if (parsed.payload.success) {
@@ -110,7 +111,7 @@ if (cluster.isMaster) {
 
     const config: IJudgerConfig = {
         cgroup: "JUDGE" + process.env.WORKER_ID,  // Cgroup, for sandbox
-        chroot: CHROOT_PATH,
+        chroot: process.env.CHROOT_PATH,
     };
 
     (async () => {
@@ -123,21 +124,21 @@ if (cluster.isMaster) {
                 const parsed = JSON.parse(raw) as IUnsolvedTask;
                 const problemFiles = [];
                 const solutionFiles = [];
-                for (let id in parsed.problemFiles) {
+                for (const id of parsed.problemFiles) {
                     problemFiles.push(await resolveFile(id));
                 }
-                for (let id in parsed.solutionFiles) {
+                for (const id of parsed.solutionFiles) {
                     solutionFiles.push(await resolveFile(id));
                 }
                 const task: ITask = {
                     solutionID: parsed.solutionID,
                     solutionFiles,
                     problemFiles,
-                    data: parsed.data
+                    data: parsed.data,
                 };
-                await perillaJudger.judge(task, channels[channelID], updateSolution);
+                await perillaJudger.judge(task, channels[channelID], callback);
             }
-            channelID = (channelID == channels.length - 1) ? 0 : channelID + 1;
+            channelID = (channelID === channels.length - 1) ? 0 : channelID + 1;
         }
     })();
 }
