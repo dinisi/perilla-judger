@@ -19,3 +19,8 @@ sudo mount -o bind /dev RootFS/dev/pts
 ```shell
 cp /etc/resolv.conf RootFS/etc
 ```
+
+## The fucking GFW blocked alpinelinux.org!
+```shell
+sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
+```
