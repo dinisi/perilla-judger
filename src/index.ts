@@ -42,7 +42,16 @@ initialize(config.server, config.username, config.password).then(() => {
                     setTimeout(process, 0);
                 }).catch((err) => {
                     // System Error
-                    post("/api/judger/", { objectID: task.objectID }, { status: SolutionResult.SystemError, score: 0, log: err.message }).then(() => {
+                    post("/api/judger/",
+                        {
+                            objectID: task.objectID,
+                        },
+                        {
+                            status: SolutionResult.SystemError,
+                            score: 0,
+                            details: { error: err.message },
+                        },
+                    ).then(() => {
                         setTimeout(process, 0);
                     });
                 });
