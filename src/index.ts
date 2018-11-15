@@ -1,43 +1,51 @@
-import { Plugin } from "./base";
-import { IJudgerConfig, IPluginMapper, ITask, IUpdateCallback } from "./interfaces";
+import { readdir, readFileSync, statSync } from "fs-extra";
+import { join } from "path";
+import { getFile } from "./file";
+import { get, initialize, post } from "./http";
+import { ITask, JudgeFunction } from "./interfaces";
 
-let config: IJudgerConfig = null;
-const plugins: Plugin[] = [];
-const mapper: IPluginMapper = {};
-export const registerPlugin = (plugin: Plugin) => {
-    plugins.push(plugin);
+const pluginDir = "plugins";
+const channels = new Set<string>();
+
+const isPlugin = (dir: string) => {
+    const stat = statSync(dir);
+    if (!stat.isDirectory) { return false; }
+    return true;
 };
 
-// tslint:disable-next-line:variable-name
-export const initialize = async (_config: IJudgerConfig) => {
-    config = _config;
-    for (const plugin of plugins) {
+readdir(pluginDir, (err, files) => {
+    for (const file of files) {
+        if (!isPlugin(file)) { return; }
+        channels.add(file);
+    }
+});
+
+const config = JSON.parse(readFileSync("config.json").toString());
+
+initialize(config.server, config.username, config.password).then(() => {
+    const channel = [...channels];
+    const process = () => {
         try {
-            await plugin.initialize(config);
-            const channels = plugin.getChannels();
-            for (const channelName of channels) {
-                mapper[channelName] = plugin;
-            }
+            get("/api/judge/", { channel }).then((task: ITask) => {
+                const judge = require(join(pluginDir, task.channel)) as JudgeFunction;
+                judge(
+                    task.problem,
+                    task.solution,
+                    async (id) => {
+                        return await getFile(task.owner, id);
+                    },
+                    async (solution) => {
+                        return await post("/api/judger/", { objectID: task.objectID }, solution);
+                    },
+                ).then(() => {
+                    // Continue to recive tasks
+                    setTimeout(process, 0);
+                });
+            });
         } catch (e) {
-            // tslint:disable-next-line:no-console
-            console.log("Error while initializing plugin: " + e.message);
+            // Empty queue, sleep 5 sec
+            setTimeout(process, 5000);
         }
-    }
-};
-
-export const judge = async (task: ITask, channel: string, callback: IUpdateCallback) => {
-    try {
-        if (!mapper[channel]) { throw new Error("Invalid data type"); }
-        await mapper[channel].judge(task, callback);
-    } catch (e) {
-        // tslint:disable-next-line:no-console
-        console.log(e);
-    }
-};
-
-export const getChannels = () => {
-    const result = [];
-    // tslint:disable-next-line:forin
-    for (const channel in mapper) { result.push(channel); }
-    return result;
-};
+    };
+    setTimeout(process, 0);
+});

@@ -18,23 +18,25 @@ export enum SolutionResult {
     OtherError,              // Other Error
 }
 
-export interface IFile {
-    path: string;
+export interface IFileModel {
+    id: number;
+    name: string;
     type: string;
-}
-
-export interface IUnsolvedTask {
-    solutionID: string;
-    solutionFiles: string[];
-    problemFiles: string[];
-    data?: any;
+    description: string;
+    hash: string;
+    size: number;
+    created: Date;
+    tags: string[];
+    owner: string;
+    creator: string;
 }
 
 export interface ITask {
-    solutionID: string;
-    solutionFiles: IFile[];
-    problemFiles: IFile[];
-    data?: any;
+    channel: string;
+    owner: string;
+    problem: object;
+    solution: object;
+    objectID: string;
 }
 
 export interface ISolution {
@@ -43,29 +45,9 @@ export interface ISolution {
     log?: string;
 }
 
-export interface IJudgerConfig {
-    cgroup: string;
-    chroot: string;
-}
-
-export interface ICompileResult {
-    success: boolean;
-    output: string;
-    execFile: string;
-}
-
-export interface ILanguageInfo {
-    requireCompile: boolean;
-    sourceFilename: string;
-    compiledFilename: string;
-    compilerPath: string;
-    compilerParameters: string[];
-    execPath: string;
-    execParameters: string[];
-    judgePath: string;
-    judgeParameters: string[];
-}
-
-export interface IPluginMapper {
-    [key: string]: Plugin;
-}
+export type JudgeFunction = (
+    problem: object,
+    solution: object,
+    resolveFile: (id: number) => Promise<{ path: string, info: IFileModel }>,
+    callback: (solution: ISolution) => Promise<void>,
+) => Promise<void>;

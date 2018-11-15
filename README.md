@@ -24,3 +24,8 @@ cp /etc/resolv.conf RootFS/etc
 ```shell
 sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
 ```
+
+## Plugins
+
+Perilla-Judger do not provide judge function.
+All judge task will be passed to plugin.
