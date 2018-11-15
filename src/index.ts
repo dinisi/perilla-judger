@@ -2,7 +2,7 @@ import { readdir, readdirSync, readFileSync, statSync } from "fs-extra";
 import { join, resolve } from "path";
 import { getFile } from "./file";
 import { get, initialize, post } from "./http";
-import { ITask, JudgeFunction } from "./interfaces";
+import { ITask, JudgeFunction, SolutionResult } from "./interfaces";
 
 const pluginDir = resolve("plugins");
 const channels = new Set<string>();
@@ -40,6 +40,11 @@ initialize(config.server, config.username, config.password).then(() => {
                 ).then(() => {
                     // Continue to recive tasks
                     setTimeout(process, 0);
+                }).catch((err) => {
+                    // System Error
+                    post("/api/judger/", { objectID: task.objectID }, { status: SolutionResult.SystemError, score: 0, log: err.message }).then(() => {
+                        setTimeout(process, 0);
+                    });
                 });
             })
             .catch((err) => {

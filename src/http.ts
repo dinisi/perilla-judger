@@ -9,7 +9,11 @@ export const initialize = (server: string, username: string, password: string) =
     return new Promise<void>((resolve, reject) => {
         const body = { username, password };
         request.post("/api/login", { body }, (err, response) => {
-            if (err) { return reject(err); }
+            if (err) {
+                // tslint:disable-next-line:no-console
+                console.log(err);
+                process.exit(0);
+            }
             if (response.body.status !== "success") { return reject(response.body.payload); }
             // tslint:disable-next-line:no-console
             console.log("[INFO] [HTTP] HTTP Helper is initialized");
@@ -21,7 +25,9 @@ export const initialize = (server: string, username: string, password: string) =
 export const get = (url: string, qs: any) => {
     return new Promise<any>((resolve, reject) => {
         request.get(url, { qs }, (err, response) => {
-            if (err) { return reject(err); }
+            if (err) {
+                return reject(err);
+            }
             if (response.body.status !== "success") { return reject(response.body.payload); }
             resolve(response.body.payload);
         });
@@ -31,7 +37,9 @@ export const get = (url: string, qs: any) => {
 export const post = (url: string, qs: any, body: any) => {
     return new Promise<any>((resolve, reject) => {
         request.post(url, { qs, body }, (err, response) => {
-            if (err) { return reject(err); }
+            if (err) {
+                return reject(err);
+            }
             if (response.body.status !== "success") { return reject(response.body.payload); }
             resolve(response.body.payload);
         });
