@@ -75,5 +75,5 @@ typings/
 # perilla files
 dist/
 cache/
-plugin/
+plugins/
 config.json

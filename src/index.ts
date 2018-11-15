@@ -1,10 +1,10 @@
-import { readdir, readFileSync, statSync } from "fs-extra";
-import { join } from "path";
+import { readdir, readdirSync, readFileSync, statSync } from "fs-extra";
+import { join, resolve } from "path";
 import { getFile } from "./file";
 import { get, initialize, post } from "./http";
 import { ITask, JudgeFunction } from "./interfaces";
 
-const pluginDir = "plugins";
+const pluginDir = resolve("plugins");
 const channels = new Set<string>();
 
 const isPlugin = (dir: string) => {
@@ -13,20 +13,20 @@ const isPlugin = (dir: string) => {
     return true;
 };
 
-readdir(pluginDir, (err, files) => {
-    for (const file of files) {
-        if (!isPlugin(file)) { return; }
-        channels.add(file);
-    }
-});
+for (const file of readdirSync(pluginDir)) {
+    // tslint:disable-next-line:no-console
+    console.log("[MAIN] found: %s", file);
+    if (!isPlugin(file)) { continue; }
+    channels.add(file);
+}
 
 const config = JSON.parse(readFileSync("config.json").toString());
 
 initialize(config.server, config.username, config.password).then(() => {
     const channel = [...channels];
     const process = () => {
-        try {
-            get("/api/judge/", { channel }).then((task: ITask) => {
+        get("/api/judger/", { channel })
+            .then((task: ITask) => {
                 const judge = require(join(pluginDir, task.channel)) as JudgeFunction;
                 judge(
                     task.problem,
@@ -41,11 +41,11 @@ initialize(config.server, config.username, config.password).then(() => {
                     // Continue to recive tasks
                     setTimeout(process, 0);
                 });
+            })
+            .catch((err) => {
+                // Empty queue, sleep 1 sec
+                setTimeout(process, 1000);
             });
-        } catch (e) {
-            // Empty queue, sleep 5 sec
-            setTimeout(process, 5000);
-        }
     };
     setTimeout(process, 0);
 });

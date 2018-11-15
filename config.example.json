@@ -1,6 +1,5 @@
 {
-    "server": "xxx",
-    "user": "xxx",
-    "pass": "xxx",
-    "chroot": "xxx"
+    "server": "127.0.0.1:8086",
+    "username": "Administrator",
+    "password": "123456"
 }
