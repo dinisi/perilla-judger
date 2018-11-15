@@ -38,7 +38,7 @@ export interface ITask {
 export interface ISolution {
     status: SolutionResult;
     score: number;
-    log?: string;
+    details?: object;
 }
 
 export type JudgeFunction = (
