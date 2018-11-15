@@ -4,7 +4,7 @@ import { getFile } from "./file";
 import { get, initialize, post } from "./http";
 import { ITask, JudgeFunction, SolutionResult } from "./interfaces";
 
-const pluginDir = resolve("plugins");
+const pluginDir = join(__dirname, "..", "plugins");
 const channels = new Set<string>();
 
 const isPlugin = (dir: string) => {
@@ -16,7 +16,7 @@ const isPlugin = (dir: string) => {
 for (const file of readdirSync(pluginDir)) {
     // tslint:disable-next-line:no-console
     console.log("[MAIN] found: %s", file);
-    if (!isPlugin(file)) { continue; }
+    if (!isPlugin(join(pluginDir, file))) { continue; }
     channels.add(file);
 }
 
