@@ -1,7 +1,3 @@
-import { Plugin } from "./base";
-
-export type IUpdateCallback = (solution: ISolution, id: string) => Promise<void>;
-
 export enum SolutionResult {
     WaitingJudge,            // Wating Judge
     Judging,                 // Judging
