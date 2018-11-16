@@ -9,7 +9,8 @@ All judge task will be passed to plugin.
 ### Official supported plugins:
 
 - [traditional](https://github.com/ZhangZisu/perilla-judger-plugin-traditional)
-- [remote](https://github.com/ZhangZisu/perilla-judger-plugin-remote)
+- [POJ](https://github.com/ZhangZisu/perilla-judger-plugin-poj)
+- [HDU](https://github.com/ZhangZisu/perilla-judger-plugin-hdu)
 
 ### Usage
 
