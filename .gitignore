@@ -80,4 +80,6 @@ config.json
 
 start.js
 
-tmp
+tmp/
+cache/
+plugins/
