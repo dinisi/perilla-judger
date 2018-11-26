@@ -8,7 +8,9 @@
     "license": "Apache-2.0",
     "private": false,
     "dependencies": {
+        "@types/lodash": "^4.14.118",
         "fs-extra": "^7.0.0",
+        "lodash": "^4.17.11",
         "randomstring": "^1.1.5",
         "request": "^2.88.0"
     },
