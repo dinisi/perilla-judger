@@ -1,6 +1,6 @@
 {
     "name": "perilla-judger",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Judger for Perilla",
     "main": "dist/index.js",
     "repository": "https://github.com/ZhangZisu/perilla-judger",
