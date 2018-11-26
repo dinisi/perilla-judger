@@ -21,7 +21,7 @@ for (const file of readdirSync(pluginDir)) {
     channelSet.add(file);
 }
 
-if (!channelSet) {
+if (!channelSet.size) {
     // tslint:disable-next-line:no-console
     console.log("No plugin found");
     process.exit(0);
