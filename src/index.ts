@@ -25,7 +25,7 @@ const config = JSON.parse(readFileSync("config.json").toString());
 initialize(config.server, config.username, config.password).then(() => {
     const channel = [...channels];
     const process = () => {
-        get("/api/judger/", { channel })
+        get("/api/judger/pop", { channel })
             .then((task: ITask) => {
                 const judge = require(join(pluginDir, task.channel)) as JudgeFunction;
                 judge(
