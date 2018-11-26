@@ -28,7 +28,6 @@ export interface IFileModel {
 }
 
 export interface ITask {
-    channel: string;
     owner: string;
     problem: object;
     solution: object;

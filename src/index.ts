@@ -35,7 +35,7 @@ initialize(config.server, config.username, config.password).then(() => {
         const channel = channels[random(0, channels.length - 1)];
         get("/api/judger/pop", { channel })
             .then((task: ITask) => {
-                const judge = require(join(pluginDir, task.channel)) as JudgeFunction;
+                const judge = require(join(pluginDir, channel)) as JudgeFunction;
                 judge(
                     task.problem,
                     task.solution,
