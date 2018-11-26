@@ -8,7 +8,7 @@ export const initialize = (server: string, username: string, password: string) =
     request = defaults({ jar: true, json: true, rejectUnauthorized: false, baseUrl: server });
     return new Promise<void>((resolve, reject) => {
         const body = { username, password };
-        request.post("/api/login", { body }, (err, response) => {
+        request.post("/api/misc/login", { body }, (err, response) => {
             if (err) {
                 // tslint:disable-next-line:no-console
                 console.log(err);
