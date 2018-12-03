@@ -1,20 +1,25 @@
 {
     "name": "perilla-judger",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Judger for Perilla",
     "main": "dist/index.js",
     "repository": "https://github.com/ZhangZisu/perilla-judger",
     "author": "ZhangZisu",
     "license": "Apache-2.0",
     "private": false,
+    "scripts": {
+        "postinstall": "tsc"
+    },
     "dependencies": {
         "@types/lodash": "^4.14.118",
+        "debug": "^4.1.0",
         "fs-extra": "^7.0.0",
         "lodash": "^4.17.11",
         "randomstring": "^1.1.5",
         "request": "^2.88.0"
     },
     "devDependencies": {
+        "@types/debug": "^0.0.31",
         "@types/fs-extra": "^5.0.4",
         "@types/randomstring": "^1.1.6",
         "@types/request": "^2.47.1",

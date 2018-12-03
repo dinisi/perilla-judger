@@ -1,9 +1,12 @@
+import debug = require("debug");
 import { readdirSync, readFileSync, statSync } from "fs-extra";
 import { random } from "lodash";
 import { join } from "path";
 import { getFile } from "./file";
 import { get, initialize, post } from "./http";
 import { ITask, JudgeFunction, SolutionResult } from "./interfaces";
+
+const log = debug("main");
 
 const pluginDir = join(__dirname, "..", "plugins");
 const channelSet = new Set<string>();
@@ -15,15 +18,13 @@ const isPlugin = (dir: string) => {
 };
 
 for (const file of readdirSync(pluginDir)) {
-    // tslint:disable-next-line:no-console
-    console.log("[MAIN] found: %s", file);
+    log("Plugin: %s", file);
     if (!isPlugin(join(pluginDir, file))) { continue; }
     channelSet.add(file);
 }
 
 if (!channelSet.size) {
-    // tslint:disable-next-line:no-console
-    console.log("No plugin found");
+    log("No plugin found");
     process.exit(0);
 }
 
@@ -35,6 +36,7 @@ initialize(config.server, config.username, config.password).then(() => {
         const channel = channels[random(0, channels.length - 1)];
         get("/api/judger/pop", { channel })
             .then((task: ITask) => {
+                log("Task received using %s", channel);
                 const judge = require(join(pluginDir, channel)) as JudgeFunction;
                 judge(
                     task.problem,
