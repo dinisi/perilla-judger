@@ -4,6 +4,8 @@ import { CoreOptions, defaults, Request, RequestAPI, RequiredUriUrl } from "requ
 import { config } from "./config";
 
 const log = debug("http");
+// tslint:disable-next-line:no-var-requires
+const atob = require("atob");
 
 let request: RequestAPI<Request, CoreOptions, RequiredUriUrl> = null;
 let token: string = null;
@@ -15,7 +17,7 @@ export const initialize = () => {
 const isTokenExpired = () => {
     const base64Url = token.split(".")[1];
     const base64 = base64Url.replace("-", "+").replace("_", "/");
-    const exp = JSON.parse(window.atob(base64)).exp;
+    const exp = JSON.parse(atob(base64)).exp;
     return exp < (+new Date()) / 1000;
 };
 
