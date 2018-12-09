@@ -21,7 +21,7 @@ const isTokenExpired = () => {
 
 const checkLogin = async () => {
     if (!token || isTokenExpired()) {
-        log("Try to login");
+        log(token ? "Token expired" : "Not logged in");
         token = await new Promise<any>((resolve, reject) => {
             request.post("/auth/login", { body: { username: config.username, password: config.password } }, (err, response) => {
                 if (err) {
@@ -31,6 +31,7 @@ const checkLogin = async () => {
                 resolve(response.body.payload);
             });
         });
+        log("New token: " + token.split(".")[1]);
     }
 };
 
