@@ -1,32 +1,44 @@
 import debug = require("debug");
 import { createWriteStream } from "fs";
 import { CoreOptions, defaults, Request, RequestAPI, RequiredUriUrl } from "request";
+import { config } from "./config";
 
 const log = debug("http");
 
 let request: RequestAPI<Request, CoreOptions, RequiredUriUrl> = null;
+let token: string = null;
 
-export const initialize = (server: string, username: string, password: string) => {
-    log("HTTP Helper is initializing");
-    request = defaults({ jar: true, json: true, rejectUnauthorized: false, baseUrl: server });
-    return new Promise<void>((resolve, reject) => {
-        const body = { username, password };
-        request.post("/api/misc/login", { body }, (err, response) => {
-            if (err) {
-                log(err);
-                process.exit(0);
-            }
-            if (response.body.status !== "success") { return reject(response.body.payload); }
-            log("[INFO] [HTTP] HTTP Helper is initialized");
-            resolve();
-        });
-    });
+export const initialize = () => {
+    request = defaults({ json: true, rejectUnauthorized: false, baseUrl: config.server });
 };
 
-export const get = (url: string, qs: any) => {
+const isTokenExpired = () => {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace("-", "+").replace("_", "/");
+    const exp = JSON.parse(window.atob(base64)).exp;
+    return exp < (+new Date()) / 1000;
+};
+
+const checkLogin = async () => {
+    if (!token || isTokenExpired()) {
+        log("Try to login");
+        token = await new Promise<any>((resolve, reject) => {
+            request.post("/auth/login", { body: { username: config.username, password: config.password } }, (err, response) => {
+                if (err) {
+                    return reject(err);
+                }
+                if (response.body.status !== "success") { return reject(response.body.payload); }
+                resolve(response.body.payload);
+            });
+        });
+    }
+};
+
+export const get = async (url: string, qs: any) => {
     log("GET %s", url);
+    await checkLogin();
     return new Promise<any>((resolve, reject) => {
-        request.get(url, { qs }, (err, response) => {
+        request.get(url, { qs, headers: { "x-access-token": token } }, (err, response) => {
             if (err) {
                 return reject(err);
             }
@@ -36,10 +48,11 @@ export const get = (url: string, qs: any) => {
     });
 };
 
-export const post = (url: string, qs: any, body: any) => {
+export const post = async (url: string, qs: any, body: any) => {
     log("POST %s", url);
+    await checkLogin();
     return new Promise<any>((resolve, reject) => {
-        request.post(url, { qs, body }, (err, response) => {
+        request.post(url, { qs, headers: { "x-access-token": token }, body }, (err, response) => {
             if (err) {
                 return reject(err);
             }
@@ -49,9 +62,10 @@ export const post = (url: string, qs: any, body: any) => {
     });
 };
 
-export const download = (url: string, qs: any, path: string) => {
+export const download = async (url: string, qs: any, path: string) => {
     log("GET %s", url);
+    await checkLogin();
     return new Promise<any>((resolve) => {
-        request.get(url, { qs }).pipe(createWriteStream(path)).on("close", resolve);
+        request.get(url, { qs, headers: { "x-access-token": token } }).pipe(createWriteStream(path)).on("close", resolve);
     });
 };

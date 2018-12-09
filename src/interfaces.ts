@@ -28,10 +28,13 @@ export interface IFileModel {
 }
 
 export interface ITask {
-    owner: string;
     problem: object;
     solution: object;
     objectID: string;
+    priority: number;
+    owner: string;
+    creator: string;
+    channel: string;
 }
 
 export interface ISolution {

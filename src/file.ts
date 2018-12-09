@@ -1,4 +1,4 @@
-import { ensureDirSync, existsSync, readFileSync, writeFileSync } from "fs-extra";
+import { ensureDirSync, existsSync } from "fs-extra";
 import { join } from "path";
 import { download, get } from "./http";
 import { IFileModel } from "./interfaces";

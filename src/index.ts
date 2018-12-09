@@ -1,6 +1,5 @@
 import debug = require("debug");
-import { readdirSync, readFileSync, statSync } from "fs-extra";
-import { random } from "lodash";
+import { readdirSync, statSync } from "fs";
 import { join } from "path";
 import { getFile } from "./file";
 import { get, initialize, post } from "./http";
@@ -28,43 +27,24 @@ if (!channelSet.size) {
     process.exit(0);
 }
 
-const config = JSON.parse(readFileSync("config.json").toString());
-
-initialize(config.server, config.username, config.password).then(() => {
+initialize();
+(async () => {
     const channels = [...channelSet];
     const process = () => {
-        const channel = channels[random(0, channels.length - 1)];
-        get("/api/judger/pop", { channel })
+        get("/api/judger/pop", { channels })
             .then((task: ITask) => {
-                log("Task received using %s", channel);
-                const judge = require(join(pluginDir, channel)) as JudgeFunction;
-                judge(
-                    task.problem,
-                    task.solution,
-                    async (id) => {
-                        return await getFile(task.owner, id);
-                    },
-                    async (solution) => {
-                        return await post("/api/judger/", { objectID: task.objectID }, solution);
-                    },
-                ).then(() => {
-                    // Continue to recive tasks
-                    setTimeout(process, 0);
-                }).catch((err) => {
-                    // System Error
-                    post("/api/judger/",
-                        {
-                            objectID: task.objectID,
-                        },
-                        {
-                            status: SolutionResult.SystemError,
-                            score: 0,
-                            details: { error: err.message },
-                        },
-                    ).then(() => {
+                log("Task received using %s", task.channel);
+                const judge = require(join(pluginDir, task.channel)) as JudgeFunction;
+                judge(task.problem, task.solution, async (id) => await getFile(task.owner, id), async (solution) => await post("/api/judger/", { objectID: task.objectID }, solution))
+                    .then(() => {
+                        // Continue to recive tasks
                         setTimeout(process, 0);
+                    })
+                    .catch((err) => {
+                        // System Error
+                        post("/api/judger/", { objectID: task.objectID }, { status: SolutionResult.SystemError, score: 0, details: { error: err.message } })
+                            .then(() => { setTimeout(process, 0); });
                     });
-                });
             })
             .catch(() => {
                 // Empty queue, sleep 1 sec
@@ -72,4 +52,4 @@ initialize(config.server, config.username, config.password).then(() => {
             });
     };
     setTimeout(process, 0);
-});
+})();
