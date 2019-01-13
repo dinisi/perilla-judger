@@ -17,6 +17,7 @@ All judge task will be passed to plugin.
 - [Codeforces](https://github.com/dinisi/perilla-judger-plugin-codeforces)
 - [BZOJ](https://github.com/dinisi/perilla-judger-plugin-bzoj)
 - [AtCoder](https://github.com/dinisi/perilla-judger-plugin-atcoder)
+- More plugin can be found in [dinisi](https://github.com/dinisi)
 
 ### Usage
 

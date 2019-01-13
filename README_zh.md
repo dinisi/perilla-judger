@@ -16,6 +16,7 @@
 - [Codeforces](https://github.com/dinisi/perilla-judger-plugin-codeforces)
 - [BZOJ](https://github.com/dinisi/perilla-judger-plugin-bzoj)
 - [AtCoder](https://github.com/dinisi/perilla-judger-plugin-atcoder)
+- 更多的插件可以在这个团队中寻找[dinisi](https://github.com/dinisi)
 
 ### 使用
 
