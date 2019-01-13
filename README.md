@@ -12,9 +12,9 @@ All judge task will be passed to plugin.
 ### Official supported plugins:
 
 - [traditional](https://github.com/dinisi/perilla-judger-plugin-traditional)
+- [Codeforces](https://github.com/dinisi/perilla-judger-plugin-codeforces)
 - [BZOJ](https://github.com/dinisi/perilla-judger-plugin-bzoj)
-- [POJ](https://github.com/dinisi/perilla-judger-plugin-poj)
-- [HDU](https://github.com/dinisi/perilla-judger-plugin-hdu)
+- [AtCoder](https://github.com/dinisi/perilla-judger-plugin-atcoder)
 
 ### Usage
 
