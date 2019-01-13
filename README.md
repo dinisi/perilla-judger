@@ -4,6 +4,8 @@
 
 Judger for Perilla
 
+[中文](https://github.com/dinisi/perilla-judger/blob/master/README_zh.md)
+
 ## Plugins
 
 Perilla-Judger do not provide judge function.
